@@ -11,4 +11,4 @@ System for parsing experiments.
 - Lots of things TODO!!!!!
 
 
-** Due to my programming skills limitation I've decided to write the "_FrontEnd_" using Jinja Templates over Flask **
+**Due to my programming skills limitation I've decided to write the "_FrontEnd_" using Jinja Templates over Flask**
