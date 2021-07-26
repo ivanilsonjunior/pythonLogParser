@@ -1,4 +1,5 @@
 # app.py
+from os import name
 from flask import Flask, render_template, send_file, Response, abort, jsonify, request, url_for, redirect
 from sqlalchemy.sql import text
 # Para o upload de arquivos
@@ -40,16 +41,8 @@ def detailExperiment(id):
 @app.route('/experiment/run/<id>')
 @auth.login_required
 def runExperiment(id):
-    db.query(Experiment).filter_by(id=id).first().run()
-    return render_template("run.html", user=auth.current_user())
-
-@app.route('/run/<id>')
-def detailRun(id):
-    run = db.query(Run).filter_by(id=id).first()
-    hasMetric = False
-    if run.metric is None:
-       hasMetric = True
-    return render_template("runDetail.html", run=run, hasMetric=hasMetric)
+    returnCode = db.query(Experiment).filter_by(id=id).first().run()
+    return render_template("run.html", returnCode=returnCode, user=auth.current_user())
 
 @app.route('/experiment/run/<id>/metrics')
 @auth.login_required
@@ -59,6 +52,33 @@ def extractMetricFromRun(id):
     #db.save(run)
     db.commit()
     return render_template("runDetail.html", run=run , user=auth.current_user())
+
+@app.route('/experiment/add/', methods=['GET'])
+@auth.login_required
+def showExperimentAdd():
+    experiments = db.query(Experiment).all()
+    qtd = len(experiments)
+    return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user())
+    
+@app.route('/experiment/add/', methods=['POST'])
+@auth.login_required
+def executeExperimentAdd():
+    expName = request.form['expName']
+    expFile = request.form['expFile']
+    exp = Experiment(name=expName,experimentFile=expFile)
+    db.add(exp)
+    db.commit()
+    experiments = db.query(Experiment).all()
+    qtd = len(experiments)
+    return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user())
+
+@app.route('/run/<id>')
+def detailRun(id):
+    run = db.query(Run).filter_by(id=id).first()
+    hasMetric = False
+    if run.metric is None:
+       hasMetric = True
+    return render_template("runDetail.html", run=run, hasMetric=hasMetric)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)

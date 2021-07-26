@@ -1,32 +1,29 @@
 <!doctype html>
 <html>
   <head>
-    <title>Experiment detail: {{ exp.name }}</title>
+    <title>Experiment Add Page</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
   </head>
   <body>
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Experiment {{ exp.name }}</a>
+        <a class="navbar-brand" href="#">Hello {{ user }}, here you can add an Experiment</a>
       </nav>
       <div class="jumbotron">
         <div class="container">
-          <h1 class="display-4">{{ exp.name }}</h1>
-          <ul>
-            <li>{{ exp.experimentFile }}</li>
-          </ul>
+          <h1 class="display-4">There are {{ count }} Experiments</h1>
+	        <ol>
+            {% for exp in experiments %}
+            <p><a href="/experiment/{{exp.id}}">Id: {{ exp.id }} - {{ exp.name }} ( {{ exp.experimentFile }} )</a></p>
+            {% endfor %}
+	        </ol>
         </div>
-      </div>
-      <div class="container">
-          <p>Runs</p>
-          <form method="get" action="/experiment/run/{{exp.id}}">
-            <button type="submit">New Run</button>
-        </form>
-	  <ol>
-		  {%for run in exp.runs %}
-		  	<li><a href="/run/{{run.id}}"> {{ run }} </a></li>
-		  {% endfor %}
-	  </ol>
-          <p></p>
+        <div class="container">
+          <form method="POST" action="">
+            Experiment Name: <input id="Experiment's Name" type="text" name="expName"><br>
+            Experiment File: <input id="Experiment's File" type="text" name="expFile"><br>
+            <input id="submit" type="submit" value="Add">
+          </form>
+        </div>
           <p></p>
       </div>
     </div>

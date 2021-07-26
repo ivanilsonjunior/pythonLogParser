@@ -10,6 +10,7 @@ from types import new_class
 from xml.dom import minidom
 from numpy import apply_along_axis, median
 import matplotlib
+from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.sqltypes import PickleType
 matplotlib.use('Agg')
 import threading
@@ -51,7 +52,7 @@ class Experiment(Base):
     __tablename__ = 'experiments'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
-    parameters = Column(String (200), nullable=False)
+    #parameters = Column(String (200), nullable=False)
     experimentFile = Column(String (200), nullable=False)
     def run(self):
         runner = Runner(str(self.experimentFile))
@@ -59,13 +60,17 @@ class Experiment(Base):
         newRun.maxNodes = len(minidom.parse(self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
         newRun.experiment = self
         newRun.start = datetime.now()
-        runner.run()
-        newRun.end = datetime.now()
-        newRun.processRun()
-        newRun.parameters = newRun.getParameters()
-        db.add(newRun)
-        self.runs.append(newRun)
-        db.commit()
+        try:
+            runner.run()
+            newRun.end = datetime.now()
+            newRun.processRun()
+            newRun.parameters = newRun.getParameters()
+            db.add(newRun)
+            self.runs.append(newRun)
+            db.commit()
+            return "Done"
+        except Exception:
+            return "Error"
 
 
 '''
@@ -322,10 +327,12 @@ class RPL(Base):
         self.metric = metric
     
     def getParentSwitches(self):
-        data = {}
+        results = {}
+        for i in range(0,(self.metric.run.maxNodes)):
+            results[str(i)] = []
+        data = db.query(Record).filter_by(run = self.run).filter_by(recordType = "RPL").filter(Record.rawData.contains("Parent switch")).all()
 
-
-        return data
+        return results
 
 '''
 Represents a regular MAC message
