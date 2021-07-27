@@ -1,3 +1,52 @@
-<script>
-history.back(alert('{{ returnCode }}'))
-</script>
+<html>
+    <head>
+       <meta name="viewport" content="width=device-width, initial-scale=1">
+       <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+       <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+       <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+       <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+       <script>
+        function goBack() {
+            window.history.back();
+        }
+        var interval = setInterval(update_progress, 2000);
+        function update_progress() {
+            $.getJSON('/experiment/run/progress').done(function(data){
+                n = data["progress"]
+                if (n == 100) {
+                    $('#isRun').html(data["run"]? "Yes" : "No");
+                    $('#isDone').html(data["doneIn"]);
+                    $('#progressDone').html(n)
+                    $('.progress-bar').animate({'width': n +'%'}, 100).attr('aria-valuenow', n);    
+                    alert("Cooja simulation Done, " + data["logFile"] + " lines were generated, starting parser...\nIn few seconds a new Run will apears.");
+                    $('.back').css('display', 'inline-block')
+                    clearInterval(interval);
+                }
+                $('#progressDone').html(n)
+                $('#isRun').html(data["run"]? "Yes" : "No");
+                $('#isDone').html(data["doneIn"]);
+                $('.progress-bar').attr('aria-valuenow', n).css("width", n+'%');    
+            }).fail(function() {
+                clearInterval(interval);
+            });
+        }
+       </script>
+
+    </head>
+    <body>
+        <div class="container">
+           <h2>Cooja Experiment Run Progress</h2>
+           <div class="progress">
+              <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%"></div>
+           </div>
+            <div class="Cooja">
+                <h3>Is Cooja run?: <span id="isRun">No</span></h3>
+            </div>
+            <div class="isDone">
+                <h3>It is estimated <span id="isDone">999999999</span> seconds to end run. (<span id="progressDone"></span>% done)</h3>
+            </div>
+            <button class="back" onclick="goBack()" style="display: none;">Go back!</button>
+        </div>
+    </body>
+</html>

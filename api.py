@@ -1,5 +1,6 @@
 # app.py
 from os import name
+import threading
 from flask import Flask, render_template, send_file, Response, abort, jsonify, request, url_for, redirect
 from sqlalchemy.sql import text
 # Para o upload de arquivos
@@ -38,11 +39,15 @@ def detailExperiment(id):
     exp = db.query(Experiment).filter_by(id=id).first()
     return render_template("expDetail.html", exp=exp)
 
+def runExperiment(id):
+    db.query(Experiment).filter_by(id=id).first().run()
+
 @app.route('/experiment/run/<id>')
 @auth.login_required
-def runExperiment(id):
-    returnCode = db.query(Experiment).filter_by(id=id).first().run()
-    return render_template("run.html", returnCode=returnCode, user=auth.current_user())
+def showRunStatus(id):
+    process = threading.Thread(target=runExperiment, args=(id,))
+    process.start()
+    return render_template("run.html", user=auth.current_user())
 
 @app.route('/experiment/run/progress')
 @auth.login_required
@@ -58,18 +63,15 @@ def getProgress():
                 if data.startswith(" - Test script"):
                     if data.startswith(" - Test script at"):
                         exp = re.compile(' - Test script at (\d+.\d+|\d+)%, done in (\d+.\d+|\d+) sec').match(data)
-                        progress = exp.group(1)
+                        progress = int(float(exp.group(1)))
                         toEnd = exp.group(2)
-                        print (progress,'->',toEnd)
                 if data.startswith(' - Test script finished'):
                     isRun = False
                     toEnd = 0
                     progress = 100
-    status = {'run': isRun, 'progress': progress, 'doneIn':toEnd}
+    log = len(open('COOJA.testlog').readlines())
+    status = {'run': isRun, 'progress': progress, 'doneIn': toEnd, 'logFile': log}
     return jsonify(status)
-
-
-
 
 @app.route('/experiment/run/<id>/metrics')
 @auth.login_required
