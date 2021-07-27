@@ -44,6 +44,33 @@ def runExperiment(id):
     returnCode = db.query(Experiment).filter_by(id=id).first().run()
     return render_template("run.html", returnCode=returnCode, user=auth.current_user())
 
+@app.route('/experiment/run/progress')
+@auth.login_required
+def getProgress():
+    isRun = False
+    progress = 0
+    toEnd = 999999999
+    with open("COOJA.log", "r") as f:
+            for line in f.readlines():
+                data = line.split(']')[3]
+                if data.startswith(' - Test script activated'):
+                    isRun = True
+                if data.startswith(" - Test script"):
+                    if data.startswith(" - Test script at"):
+                        exp = re.compile(' - Test script at (\d+.\d+|\d+)%, done in (\d+.\d+|\d+) sec').match(data)
+                        progress = exp.group(1)
+                        toEnd = exp.group(2)
+                        print (progress,'->',toEnd)
+                if data.startswith(' - Test script finished'):
+                    isRun = False
+                    toEnd = 0
+                    progress = 100
+    status = {'run': isRun, 'progress': progress, 'doneIn':toEnd}
+    return jsonify(status)
+
+
+
+
 @app.route('/experiment/run/<id>/metrics')
 @auth.login_required
 def extractMetricFromRun(id):
