@@ -330,8 +330,16 @@ class RPL(Base):
         results = {}
         for i in range(0,(self.metric.run.maxNodes)):
             results[str(i)] = []
-        data = db.query(Record).filter_by(run = self.run).filter_by(recordType = "RPL").filter(Record.rawData.contains("Parent switch")).all()
-
+        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "RPL").filter(Record.rawData.contains("Parent switch:")).all()
+        reExp = re.compile('\((.*?)\)')
+        for sw in data:
+            old = ':'.join(map(str, sw.rawData.split('->')[0].split(":")[1:])).strip()
+            new = sw.rawData.split('->')[1].strip()
+            if reExp.search(old): 
+                old = None
+            if reExp.search(new):
+                new = None            
+            results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
         return results
 
 '''
