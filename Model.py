@@ -717,7 +717,7 @@ class Latency(Base):
 
     def latencyMedian(self):
         records = self.application.records
-        from numpy import mean
+        from numpy import median
         start = 2
         nodes = self.getNodes()
         for i in nodes[start:]:
@@ -816,7 +816,7 @@ class Latency(Base):
         nodes = self.getNodes()
         for i in range(2,self.application.metric.run.maxNodes):
             x = [a[0]/1000 for a in nodes[i]] # Seconds
-            y = [round(a[1]/1000,3) for a in nodes[i]] # Seconds
+            y = [round(a[1],3) for a in nodes[i]] # Miliseconds
             plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
         myMean = self.latencyMean()
         myMedian = self.latencyMedian()

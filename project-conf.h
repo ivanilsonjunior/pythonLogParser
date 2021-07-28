@@ -34,9 +34,9 @@
 #define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_WARN
 #define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_WARN
 #define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_DBG
-#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_DBG
-#define TSCH_LOG_CONF_PER_SLOT                     1
+/*#define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_DBG*/
+/*#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_DBG*/
+#define TSCH_LOG_CONF_PER_SLOT                     0
 
 /* Enable printing of packet counters */
 #define LINK_STATS_CONF_PACKET_COUNTERS          1
@@ -53,4 +53,4 @@
 /*#define RPL_CONF_WITH_MC 1*/
 /*#define RPL_CONF_DAG_MC RPL_DAG_MC_ETX*/
 #define TSCH_STATS_CONF_ON 1
-#define TSCH_STATS_CONF_SAMPLE_NOISE_RSSI 1
+#define TSCH_STATS_CONF_SAMPLE_NOISE_RSSI 0

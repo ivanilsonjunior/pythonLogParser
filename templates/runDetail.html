@@ -88,8 +88,8 @@
         <h2>Metrics</h2>
         <button type="button" class="collapsible">Application</button>
         <div class="content">
-            <p>Latency (Mean): {{ run.metric.application.latency.latencyMean() }}</p>
-            <p>Latency (Median): {{ run.metric.application.latency.latencyMedian() }}</p>
+            <p>Latency (Mean): {{ run.metric.application.latency.latencyMean() }} Seconds</p>
+            <p>Latency (Median): {{ run.metric.application.latency.latencyMedian() Seconds}}</p>
             <p><img src="data:image/png;base64,{{run.metric.application.latency.printLatency()}}"/></p>
             <p><img src="data:image/png;base64,{{run.metric.application.latency.printLatencyByNode()}}"/></p>
             <p><img src="data:image/png;base64,{{run.metric.application.latency.printLatencyByNodesPosition()}}"/></p>
