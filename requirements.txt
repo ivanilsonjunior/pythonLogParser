@@ -1,7 +1,7 @@
 sqlalchemy
+flask
+flask_httpauth
 datetime
-re
-json
+werkzeug
 matplotlib
 numpy
-xml
