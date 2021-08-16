@@ -458,7 +458,9 @@ class MAC(Base):
                                 msg.sent(sentTime, status, tx)
                                 if macMsg.dest == 0 or macMsg.dest == 65535:
                                     #Broadcast message is sent by all, I cant control who receives."
+                                    # TODO: Figure out why the seqno changes
                                     msg.receive(sentTime)
+                                    msg.tries = 0
                                 continue
             for rec in data:
                 if rec.rawData.startswith("received from"): 
@@ -695,11 +697,10 @@ class Latency(Base):
             #print(len(self.nodes))
         for i in self.application.records:
             if (i.rcv):
-                nodes[i.srcNode].append(tuple((i.genTime//1000, i.getLatency()//1000)))
+                nodes[i.srcNode].append(tuple((i.genTime/1000, i.getLatency()/float(1000))))
         return nodes
 
     def latencyMean(self):
-        records = self.application.records
         from numpy import mean
         start = 2
         nodes = self.getNodes()
@@ -707,8 +708,8 @@ class Latency(Base):
             valuesNodes = []
             values = []
             for j in i:
-                values.append(j[1]/1000) # Miliseconds 10 ^ -3
-                valuesNodes.append(j[1]/1000) # Miliseconds 10 ^ -3
+                values.append(j[1]) # Miliseconds 10 ^ -3
+                valuesNodes.append(j[1]) # Miliseconds 10 ^ -3
             #print("Node:" + str(start) + " Size: " + str(len(valuesNodes)) + " Mean:" + str(round(mean(valuesNodes),2)))
             start += 1
         globalMean = round(mean(values),3)
@@ -716,7 +717,6 @@ class Latency(Base):
         return globalMean
 
     def latencyMedian(self):
-        records = self.application.records
         from numpy import median
         start = 2
         nodes = self.getNodes()
@@ -724,8 +724,8 @@ class Latency(Base):
             valuesNodes = []
             values = []
             for j in i:
-                values.append(j[1]/1000) # Miliseconds 10 ^ -3
-                valuesNodes.append(j[1]/1000) # Miliseconds 10 ^ -3
+                values.append(j[1]) # Miliseconds 10 ^ -3
+                valuesNodes.append(j[1]) # Miliseconds 10 ^ -3
             #print("Node:" + str(start) + " Size: " + str(len(valuesNodes)) + " Mean:" + str(round(mean(valuesNodes),2)))
             start += 1
         globalMedian = round(median(values),3)
@@ -818,6 +818,7 @@ class Latency(Base):
             x = [a[0]/1000 for a in nodes[i]] # Seconds
             y = [round(a[1],3) for a in nodes[i]] # Miliseconds
             plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
+        # TODO: Adjust ALL latency units to ms
         myMean = self.latencyMean()
         myMedian = self.latencyMedian()
         plt.axhline(y = myMean, color = 'r', linestyle = '--',label="Mean: " + str(myMean))
