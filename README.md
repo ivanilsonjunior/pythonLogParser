@@ -18,6 +18,20 @@ Another Log Parser for Contiki-NG Experiments.
    - You should access the page via browser (http://localhost:5000) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
    - Inside the experiment page click on new Run
    - After the done you can extract the metrics from run
+ ### Command-Line
+ 1. You can use ipython:
+   ```
+   load Model.py
+   exp = Experiment(name = "Test Experiment", experimentFile = "Metrics25m2Node.csc")
+   db.add(exp)
+   db.commit() # After that yor have a saved experiment and you could run
+   exp.runs # List of run linked to that experiment
+   exp.run() # Run the Experiment
+   r = exp.runs[0] # Gets the first run
+   r = db.query(Run).filter_by(id=1).first() # Returns the id 1 run
+   r.records # Shows the run record list
+   len(db.query(Record).filter_by(run = r).filter_by(node = 2).filter_by(recordType = "TSCH").all()) # Shows the quantity of TSCH records from node 2
+   ```
 
 
 **Due to my programming skills limitation I've decided to write the "_FrontEnd_" using Jinja Templates over Flask**
