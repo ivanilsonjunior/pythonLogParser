@@ -40,15 +40,16 @@ Base = declarative_base(metadata=meta)
 Session = sessionmaker(bind=engine)
 db = Session()
 
-'''
-Represents an experiment, an experiment is composed by a .csc scenario file that will be run once or more times.
-    Parameters:
-        name: Experiment Name
-        parameters: Experiment parameters (Could be refactored)
-        experimentFile: Cooja .csc simulation
-        records: Generated records after run
-'''
 class Experiment(Base):
+    '''
+    Represents an experiment, an experiment is composed by a .csc scenario file that will be run once or more times.
+
+        Parameters:
+            name: Experiment Name
+            parameters: Experiment parameters (Could be refactored)
+            experimentFile: Cooja .csc simulation
+            records: Generated records after run
+    '''
     __tablename__ = 'experiments'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
@@ -73,19 +74,18 @@ class Experiment(Base):
             return "Error"
 
 
-'''
-
-Represents a ran experiment, a experiment file can me customisated by the Makefile and project.conf files, those customisations should be registed by the parameters dict property. The scenario is run, and after that, the generated log is parsed to a Record object linked on Run (One to Many)
-
-    Parameters:
-        start: Start simulation time
-        end: End simulation time
-        maxNodes: Simulation nodes amount
-        parameters: Run parameters
-        experiment: Experiment base
-        metric: Metrics simulation
-'''
 class Run(Base):
+    '''
+    Represents a run experiment, a experiment file can me customisated by the Makefile and project.conf files, those customisations should be registed by the parameters dict property. The scenario is run, and after that, the generated log is parsed to a Record object linked on Run (One to Many)
+
+        Parameters:
+            start: Start simulation time
+            end: End simulation time
+            maxNodes: Simulation nodes amount
+            parameters: Run parameters
+            experiment: Experiment base
+            metric: Metrics simulation
+    '''
     __tablename__ = "runs"
     id = Column(Integer,primary_key=True)
     start = Column(DateTime)
@@ -182,10 +182,10 @@ class Run(Base):
                 db.add(newRecord)
                 self.records.append(newRecord)
     
-    '''
-    Adapted from: https://stackoverflow.com/questions/2804543/read-subprocess-stdout-line-by-line
-    '''
     def getParameters(self):
+        '''
+        Adapted from: https://stackoverflow.com/questions/2804543/read-subprocess-stdout-line-by-line
+        '''
         import subprocess
         proc = subprocess.Popen(['make','viewconf'],bufsize=1, universal_newlines=True, stdout=subprocess.PIPE)
         myDict = {}
@@ -207,18 +207,18 @@ class Run(Base):
                     continue
         return myDict
 
-'''
-Represents an experiment's record
-    Parameters:
-        simTime: Simulation time of record (Microseconds 10^ -6)
-        node: Number of the node that generates the record
-        recordLevel: Level of record (Info, Warn, Debug)
-        recordType: Type (App, Protocol, Layer, etc)
-        rawData: Record string
-        run: Run that owns this record
-
-'''
 class Record(Base):
+    '''
+    Represents an experiment's record
+        Parameters:
+            simTime: Simulation time of record (Microseconds 10^ -6)
+            node: Number of the node that generates the record
+            recordLevel: Level of record (Info, Warn, Debug)
+            recordType: Type (App, Protocol, Layer, etc)
+            rawData: Record string
+            run: Run that owns this record
+
+    '''
     __tablename__ = 'records'
     id = Column(Integer, primary_key=True)
     simTime = Column(Integer, nullable=False)
@@ -235,8 +235,12 @@ class Record(Base):
         self.recordType = type
         self.rawData = data
         self.run = run
-      
+
+
 class Node(Base):
+    '''
+    TODO: Represents a note (Position and Metrics)
+    '''
     __tablename__ = 'nodes'
     id = Column(Integer, primary_key=True)
     simId = Column(Integer, primary_key=True)
@@ -244,7 +248,11 @@ class Node(Base):
     posY = Column(Integer, nullable=False)
     posZ = Column(Integer, nullable=False)
 
+
 class Metrics(Base):
+    '''
+    This is the metrics container. TODO: Assemble
+    '''
     __tablename__ = 'metrics'
     id = Column(Integer, primary_key=True)
     run_id = Column(Integer, ForeignKey('runs.id')) # The ForeignKey must be the physical ID, not the Object.id
@@ -315,10 +323,10 @@ class Application(Base):
                 #print("Node: " ,  srcNode  , "Seq: " , sequence , "Receive Time: ", recTime)
                         break
 
-'''
-RPL Metrics Class
-'''
 class RPL(Base):
+    '''
+    RPL Metrics Class
+    '''
     __tablename__ = 'rpl'
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="rpl")
@@ -342,10 +350,11 @@ class RPL(Base):
             results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
         return results
 
-'''
-Represents a regular MAC message
-'''
+
 class MACMessage(Base):
+    '''
+    Represents a regular MAC message
+    '''
     __tablename__ = 'macmessage'
     id = Column(Integer, primary_key=True)
     origin = 0
@@ -398,14 +407,12 @@ class MACMessage(Base):
     def __str__(self) -> str:
         return "{self.origin}<->{self.dest} Q:{self.enQueued} S({self.isSent}):{self.sentTime} S({self.isReceived}):{self.rcvTime} Sq:{self.seqno}".format(self=self)
 
-'''
 
-Represents the MAC Layer
-
-TODO: In future a factory method should return the self.metric.run.parameters['MAKE_MAC'] instance, now is implemented by an ungainly if/else statement
-
-'''
 class MAC(Base):
+    '''
+    Represents the MAC Layer
+    TODO: In future a factory method should return the self.metric.run.parameters['MAKE_MAC'] instance, now is implemented by an ungainly if/else statement
+    '''
     __tablename__ = 'mac'
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="mac")
@@ -550,12 +557,13 @@ class MAC(Base):
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
-'''
-Link Status
 
-Class to handle the Link Status level Log
-'''
 class LinkStats(Base):
+    '''
+    Link Status
+
+    Class to handle the Link Status level Log
+    '''
     __tablename__ = 'linkstats'
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="linkstats")
