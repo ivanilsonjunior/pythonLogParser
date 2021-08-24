@@ -404,6 +404,12 @@ class MACMessage(Base):
         if not self.isReceived:
             raise Exception("Message not received")
         return self.tries - 1
+    def transmissions(self):
+        if not self.isSent:
+            raise Exception("Message didn't send")
+        if not self.isReceived:
+            raise Exception("Message not received")
+        return self.tries
     def __str__(self) -> str:
         return "{self.origin}<->{self.dest} Q:{self.enQueued} S({self.isSent}):{self.sentTime} S({self.isReceived}):{self.rcvTime} Sq:{self.seqno}".format(self=self)
 
@@ -446,6 +452,7 @@ class MAC(Base):
                     if macMsg.dest == 0 or macMsg.dest == 65535:
                         macMsg.isReceived = True
                         macMsg.isSent = True
+                        macMsg.tries = 1
                     results[str(origin)].append(macMsg)
                     continue
                 if rec.rawData.startswith("packet sent to"):
@@ -467,7 +474,7 @@ class MAC(Base):
                                     #Broadcast message is sent by all, I cant control who receives."
                                     # TODO: Figure out why the seqno changes
                                     msg.receive(sentTime)
-                                    msg.tries = 0
+                                    msg.tries = 1
                                 continue
             for rec in data:
                 if rec.rawData.startswith("received from"): 
@@ -533,6 +540,31 @@ class MAC(Base):
         return base64.b64encode(tempBuffer.getvalue()).decode()         
 
     def printRetransmissions(self):
+        import io
+        import base64
+        import matplotlib.pyplot as plt
+        plt.clf()
+        tempBuffer = io.BytesIO()
+        for i,j in self.results.items():
+            # TODO: Process Broadcast messagens
+            if i == '0' or i == '65535':
+                continue
+        #     print (i)
+            x = []
+            y = []
+            for m in j:
+                if m.isReceived and m.isSent:
+                    x.append(m.sentTime/1000000)
+                    y.append(m.retransmissions())
+            plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
+        plt.xlabel("Simulation Time (s)")
+        plt.ylabel("# of Retransmissions")
+        plt.legend()
+        plt.gcf().set_size_inches(8,6)
+        plt.savefig(tempBuffer, format = 'png')
+        return base64.b64encode(tempBuffer.getvalue()).decode()
+    
+    def printTransmissions(self):
         import io
         import base64
         import matplotlib.pyplot as plt
@@ -783,17 +815,22 @@ class Latency(Base):
         y = []
         z = []
         latData = self.getLatencyDataByNode()
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
         for node, position in self.application.metric.run.getNodesPosition().items():
             nodes.append(node)
             x.append(position['x'])
             y.append(position['y'])
             try:
-                z.append(mean(latData[node]))
+                if latData[node] == []: #No Latency Data
+                    z.append(0)
+                    ax.text(position['x'],position['y']+5, 0, "No Data", )
+                else:
+                    z.append(mean(latData[node]))
+                    #ax.text(position['x'],position['y']+5, mean(latData[node]), mean(latData[node]) )
             except:
                 # Node 1
                 z.append(0)
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
         #ax.scatter(x, y, z, c='b', marker='o')
         cmap = cm.get_cmap('rainbow')
         max_height = np.max(z)   # get range of colorbars
@@ -803,7 +840,7 @@ class Latency(Base):
         ax.bar3d(x, y, 0, 2, 2, z, color=rgba)
         i = 0
         for label in nodes:
-            ax.text(x[i],y[i],z[i], label)
+            ax.text(x[i],y[i]+2,z[i], label)
             i += 1
         colourMap = plt.cm.ScalarMappable(cmap=plt.cm.rainbow)
         colourMap.set_array(z)
