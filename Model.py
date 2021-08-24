@@ -670,7 +670,10 @@ class PDR(Base):
             total = node[True] + node[False]
             totalGlobal += total
             trueGlobal += node[True]
-            pdr = round((node[True]/total)*100,2)
+            try:
+                pdr = round((node[True]/total)*100,2)
+            except ZeroDivisionError: # Happens when the node never ingress in TSCH
+                pdr = 0
             #print ("Node" , index ,"Total: " , total, " False: ", node[False])
             #print ("PDR: " , pdr,"%")
             data[index] = pdr
