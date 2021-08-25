@@ -94,20 +94,21 @@
             <p><img src="data:image/png;base64,{{run.metric.application.latency.printLatencyByNode()}}"/></p>
             <p><img src="data:image/png;base64,{{run.metric.application.latency.printLatencyByNodesPosition()}}"/></p>
             <p>PDR Global: {{run.metric.application.pdr.getGlobalPDR()}}%</p>
-            <p>PDR Graph(per node)</p>
-            <p><img src="data:image/png;base64,{{run.metric.application.pdr.printPDR()}}"/></p>
+            <p>PDR Graph(per node):
+              <img src="data:image/png;base64,{{run.metric.application.pdr.printPDR()}}"/></p>
         </div>
         <button type="button" class="collapsible">RPL</button>
           <div class="content">
-  
+            <p>Parent Switches:
+              <img src="data:image/png;base64,{{run.metric.rpl.printParentSwitches()}}"/></p>
           </div>
         {% if run.parameters['MAKE_MAC'] == "MAKE_MAC_TSCH" %}
               <button type="button" class="collapsible">MAC (TSCH)</button>
               <div class="content">
-                <p>TSCH Retransmissions: </p>
-                <p><img src="data:image/png;base64,{{run.metric.mac.printRetransmissions()}}"/></p>
-                <p>Ingress over time.</p>
-                <p><img src="data:image/png;base64,{{run.metric.mac.printIngress()}}"/></p>
+                <p>TSCH Retransmissions:
+                  <img src="data:image/png;base64,{{run.metric.mac.printRetransmissions()}}"/></p>
+                <p>Ingress over time:
+                  <img src="data:image/png;base64,{{run.metric.mac.printIngress()}}"/></p>
               </div>
         {% else %}
               <button type="button" class="collapsible">MAC (CSMA)</button>

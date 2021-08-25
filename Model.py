@@ -350,6 +350,36 @@ class RPL(Base):
             results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
         return results
 
+    def printParentSwitches(self):
+        data = {}
+        results = self.getParentSwitches()
+        from collections import Counter
+        index = 2
+        totalGlobal = 0
+        trueGlobal = 0
+        import io
+        import base64
+        import matplotlib.pyplot as plt
+        plt.clf()
+        for k in results:
+            if k == "0" or k == "1":
+                continue
+            swCount = len(results[k])
+            data[index] = swCount
+            index += 1
+            width = 0.8
+            plt.text(((index-1) - (width/3)), swCount-2, str(swCount), color="black", fontsize=8)
+        tempBuffer = io.BytesIO()
+        plt.bar(data.keys(),data.values(), width=width, label="Parent Switches")
+        #plt.bar_label(data.values(), padding=2)
+        plt.xticks(list(data.keys()))
+        #plt.ylim([0, 100])
+        plt.xlabel("Nodes")
+        plt.ylabel("Parent Switches")
+        plt.legend()
+        plt.gcf().set_size_inches(8,6)
+        plt.savefig(tempBuffer, format = 'png')
+        return base64.b64encode(tempBuffer.getvalue()).decode() 
 
 class MACMessage(Base):
     '''
