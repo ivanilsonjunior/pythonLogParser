@@ -12,6 +12,7 @@ org/**
 *.gz
 *.testlog
 *.log
+*.db-journal
 
 ### C ###
 # Prerequisites
