@@ -11,6 +11,15 @@ Another Log Parser for Contiki-NG Experiments.
 - After the run, the log is parsed to an ORM
 - Metrics and network behaviour could be extracted from ORM
 
+## Classes
+### Runner.py
+It's responsible for calling Cooja and running the experiments, could easily used for calling the Cooja by other projects. It is an encapsulated version of [run-cooja.py](https://github.com/contiki-ng/contiki-ng/blob/develop/examples/benchmarks/result-visualization/run-cooja.py)
+### apt.py
+It's responsible for presenting experiments, their runs and generated data. It was made in Flask and the user can create new simulations and runs. The generated information is presented by layer.
+### [Model.py](https://github.com/ivanilsonjunior/pythonLogParser/blob/main/Model.py)
+It's responsible for processing all the things. It's my trying to devel Obeject Oriented.
+TODO: Split apart the data from the presentation
+
 ## Install and Run
 1. Inside the [Contiki-NG](https://github.com/contiki-ng/contiki-ng) examples folder clone this repository
 2. Inside the created folder execute the API 'python3 api.py'
@@ -18,6 +27,7 @@ Another Log Parser for Contiki-NG Experiments.
    - You should access the page via browser (http://localhost:5000) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
    - Inside the experiment page click on new Run
    - After the done you can extract the metrics from run
+ 
  ### Command-Line
  1. You can use ipython:
    ```
