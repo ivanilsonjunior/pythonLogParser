@@ -17,7 +17,7 @@ It's responsible for calling Cooja and running the experiments, could easily use
 ### [api.py](https://github.com/ivanilsonjunior/pythonLogParser/blob/main/api.py)
 It's responsible for presenting experiments, their runs and generated data. It was made in Flask and the user can create new simulations and runs. The generated information is presented by layer.
 ### [Model.py](https://github.com/ivanilsonjunior/pythonLogParser/blob/main/Model.py)
-It's responsible for processing all the things. It's my trying to devel Obeject Oriented.
+It's responsible for processing all the things. It's my trying to devel using the Object Oriented paradigm.
 TODO: Split apart the data from the presentation
 
 ## Install and Run
