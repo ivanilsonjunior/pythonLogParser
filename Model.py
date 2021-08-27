@@ -355,8 +355,6 @@ class RPL(Base):
         results = self.getParentSwitches()
         from collections import Counter
         index = 2
-        totalGlobal = 0
-        trueGlobal = 0
         import io
         import base64
         import matplotlib.pyplot as plt
@@ -379,7 +377,45 @@ class RPL(Base):
         plt.legend()
         plt.gcf().set_size_inches(8,6)
         plt.savefig(tempBuffer, format = 'png')
-        return base64.b64encode(tempBuffer.getvalue()).decode() 
+        return base64.b64encode(tempBuffer.getvalue()).decode()
+    
+
+    '''
+        First attemp to get a network overview at simulation's end
+        TODO: Get nodes position by .csc file
+    '''
+    def printNetwork(self):
+        import networkx as nx
+        import matplotlib.pyplot as plt
+        import io
+        import base64
+        tempBuffer = io.BytesIO()
+        plt.clf()
+        G = nx.DiGraph()
+        data = self.getParentSwitches()
+        for i in data:
+            if i == '0':
+                continue
+            if i == '1':
+                G.add_node(str('N'+i))
+                continue
+            nodeOrigin = str('N' + i)
+            nodeParent = data[i].pop()['new'] # Get the last change
+            if nodeParent == None:
+                G.add_node(nodeOrigin)
+            else:
+                G.add_edge(nodeOrigin,str('N'+ str(int(nodeParent.split(":")[-1], 16))))
+        val_map = {'N1': 1.0}
+        values = [val_map.get(node, 0.25) for node in G.nodes()]
+        pos = nx.planar_layout(G)
+        nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), node_color = values, node_size = 500)
+        nx.draw_networkx_labels(G, pos)
+        nx.draw_networkx_edges(G, pos)
+        plt.gcf().set_size_inches(8,6)
+        #plt.show()
+        #
+        plt.savefig(tempBuffer, format = 'png')
+        return base64.b64encode(tempBuffer.getvalue()).decode()
 
 class MACMessage(Base):
     '''

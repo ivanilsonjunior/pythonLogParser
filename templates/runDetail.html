@@ -101,7 +101,9 @@
           <div class="content">
             <p>Parent Switches:
               <img src="data:image/png;base64,{{run.metric.rpl.printParentSwitches()}}"/></p>
-          </div>
+              <p>Final Network Nodes Parents:
+                <img src="data:image/png;base64,{{run.metric.rpl.printNetwork()}}"/></p>
+            </div>
         {% if run.parameters['MAKE_MAC'] == "MAKE_MAC_TSCH" %}
               <button type="button" class="collapsible">MAC (TSCH)</button>
               <div class="content">
