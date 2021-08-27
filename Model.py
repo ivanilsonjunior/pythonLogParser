@@ -150,14 +150,14 @@ class Run(Base):
     def getNodesPosition(self):
         myData = {}
         for i in range(2,(self.maxNodes)):
-            myData['n' + str(i)] = {}
+            myData['N' + str(i)] = {}
         doc = minidom.parse(self.experiment.experimentFile)
         for i in doc.getElementsByTagName('mote'):
             try:
                 myId = str(i.getElementsByTagName('id')[0].firstChild.data)
                 x = float(i.getElementsByTagName('x')[0].firstChild.data)
                 y = float(i.getElementsByTagName('y')[0].firstChild.data)
-                myData['n' + myId] = {'x' : x, 'y' : y}
+                myData['N' + myId] = {'x' : x, 'y' : y}
             except:
                 None
         return myData
@@ -382,7 +382,6 @@ class RPL(Base):
 
     '''
         First attemp to get a network overview at simulation's end
-        TODO: Get nodes position by .csc file
     '''
     def printNetwork(self):
         import networkx as nx
@@ -392,25 +391,34 @@ class RPL(Base):
         tempBuffer = io.BytesIO()
         plt.clf()
         G = nx.DiGraph()
+        npos = self.metric.run.getNodesPosition()
+        gpos = {}
+        for node in npos:
+            gpos [node] =  (npos[node]['x'],npos[node]['y'])
         data = self.getParentSwitches()
         for i in data:
-            if i == '0':
+            if i == '0' and i == '1':
                 continue
             if i == '1':
                 G.add_node(str('N'+i))
                 continue
             nodeOrigin = str('N' + i)
-            nodeParent = data[i].pop()['new'] # Get the last change
+            try:
+                nodeParent = data[i].pop()['new'] # Get the last change
+            except IndexError:
+                continue
             if nodeParent == None:
                 G.add_node(nodeOrigin)
+                continue
             else:
                 G.add_edge(nodeOrigin,str('N'+ str(int(nodeParent.split(":")[-1], 16))))
         val_map = {'N1': 1.0}
         values = [val_map.get(node, 0.25) for node in G.nodes()]
-        pos = nx.planar_layout(G)
-        nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), node_color = values, node_size = 500)
-        nx.draw_networkx_labels(G, pos)
-        nx.draw_networkx_edges(G, pos)
+        #pos = nx.planar_layout(G)
+        #nx.draw(G, with_labels=True)
+        nx.draw_networkx_nodes(G, pos=gpos)
+        nx.draw_networkx_labels(G, pos=gpos)
+        nx.draw_networkx_edges(G, pos=gpos)
         plt.gcf().set_size_inches(8,6)
         #plt.show()
         #
@@ -844,10 +852,10 @@ class Latency(Base):
     def getLatencyDataByNode(self):
         myData = {}
         for i in range(2,(self.application.metric.run.maxNodes)):
-            myData['n' + str(i)] = []
+            myData['N' + str(i)] = []
         for rec in self.application.records:
             if rec.rcv:
-                myData['n' + str(rec.srcNode)].append(rec.getLatency()/float(1000))
+                myData['N' + str(rec.srcNode)].append(rec.getLatency()/float(1000))
         return myData
 
     def printLatencyByNode(self):
