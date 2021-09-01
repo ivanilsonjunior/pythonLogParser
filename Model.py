@@ -943,8 +943,8 @@ class Latency(Base):
         # TODO: Adjust ALL latency units to ms
         myMean = self.latencyMean()
         myMedian = self.latencyMedian()
-        plt.axhline(y = myMean, color = 'r', linestyle = '--',label="Mean: " + str(myMean))
-        plt.axhline(y = myMedian, color = 'g', linestyle = '--',label="Median: " + str(myMedian))
+        plt.axhline(y = myMean, color = 'r', linestyle = '--',label="Mean: " + str(myMean) +' ms')
+        plt.axhline(y = myMedian, color = 'g', linestyle = '--',label="Median: " + str(myMedian) +' ms')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("Latency (ms)")
         plt.legend()
