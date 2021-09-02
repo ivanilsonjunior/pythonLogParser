@@ -21,8 +21,13 @@ It's responsible for processing all the things. It's my trying to devel using th
 TODO: Split apart the data from the presentation
 
 ## Install and Run
+
+I've tested on Debian 10 and default-jdk
+
 1. Inside the [Contiki-NG](https://github.com/contiki-ng/contiki-ng) examples folder clone this repository
-2. Inside the created folder execute the API 'python3 api.py'
+   1. The JAVA_HOME variable must be setted
+2. After the clonning part execute '''python3 -m pip install -r requirements.txt'''
+3. Inside the created folder execute the API 'python3 api.py'
    - At the first run a SQLite DB Metrics.db will be created
    - You should access the page via browser (http://localhost:5000) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
    - Inside the experiment page click on new Run
