@@ -5,3 +5,4 @@ datetime
 werkzeug
 matplotlib
 numpy
+networkx
