@@ -9,6 +9,7 @@
        <script>
         function goBack() {
             window.history.back();
+            window.location.reload
         }
         var interval = setInterval(update_progress, 2000);
         function update_progress() {
@@ -17,13 +18,13 @@
                 if (n == 100) {
                     $('#isRun').html(data["run"]? "Yes" : "No");
                     $('#isDone').html(data["doneIn"]);
-                    $('#progressDone').html(n)
+                    $('#progressDone').html(n);
                     $('.progress-bar').animate({'width': n +'%'}, 100).attr('aria-valuenow', n);    
                     alert("Cooja simulation Done, " + data["logFile"] + " lines were generated, starting parser...\nIn few seconds a new Run will apears.");
-                    $('.back').css('display', 'inline-block')
+                    $('.back').css('display', 'inline-block');
                     clearInterval(interval);
                 }
-                $('#progressDone').html(n)
+                $('#progressDone').html(n);
                 $('#isRun').html(data["run"]? "Yes" : "No");
                 $('#isDone').html(data["doneIn"]);
                 $('.progress-bar').attr('aria-valuenow', n).css("width", n+'%');    
