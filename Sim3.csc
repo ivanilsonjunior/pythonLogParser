@@ -216,7 +216,7 @@
       <interface_config>
         org.contikios.cooja.interfaces.Position
         <x>40</x>
-        <y>40.088058419243985</y>
+        <y>40</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
