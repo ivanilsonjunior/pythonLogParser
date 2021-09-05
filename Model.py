@@ -614,7 +614,7 @@ class MAC(Base):
                     x = [0,0]
             plt.plot(x,[index,index])
             index +=1
-        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", c='Orange')
+        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (S)")
         plt.ylabel("Nodes")
         plt.yticks(range(2,self.metric.run.maxNodes))
@@ -640,7 +640,7 @@ class MAC(Base):
                     x.append(m.sentTime/1000000)
                     y.append(m.retransmissions())
             plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
-        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", c='Orange')
+        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("# of Retransmissions")
         plt.legend()
@@ -667,7 +667,7 @@ class MAC(Base):
                     x.append(m.sentTime/1000000)
                     y.append(m.retransmissions())
             plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
-        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", c='Orange')
+        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("# of Retransmissions")
         plt.legend()
@@ -740,7 +740,7 @@ class LinkStats(Base):
         plt.ylabel("PDR (%)")
         plt.legend()
         plt.title("Link-level PDR by node")
-        plt.gcf().set_size_inches(8,6)
+        plt.gcf().set_size_inches(8,4)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
@@ -809,7 +809,7 @@ class PDR(Base):
         plt.ylabel("PDR (%)")
         plt.title("Application PDR by node")
         plt.legend()
-        plt.gcf().set_size_inches(8,6)
+        plt.gcf().set_size_inches(8,4)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode() 
 
@@ -959,7 +959,7 @@ class Latency(Base):
         myMedian = self.latencyMedian()
         plt.axhline(y = myMean, color = 'r', linestyle = '--',label="Mean: " + str(myMean) +' ms')
         plt.axhline(y = myMedian, color = 'g', linestyle = '--',label="Median: " + str(myMedian) +' ms')
-        plt.axvline(x=int(self.application.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", c='Orange')
+        plt.axvline(x=int(self.application.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("Latency (ms)")
         plt.legend()
