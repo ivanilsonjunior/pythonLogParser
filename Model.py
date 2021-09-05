@@ -1004,7 +1004,21 @@ class Energy(Base):
     def __init__(self,metric):
         self.metric = metric
         self.processEnergy()
+    '''
+    The Energest module reports a period each 60 seconds 
     
+    '''
+    def getRadioTime(self):
+        radio = {}
+        for node in self.results:
+            radio[node] = {}
+            for info in self.results[node]:
+                etime = (int(info)+1)*60 # Period #0 is the first period
+                tx =  self.results[node][info][4:][0]['Radio Tx']['spent']
+                rx = self.results[node][info][4:][1]['Radio Rx']['spent']
+                radio[node][etime] = [rx,tx]
+        return radio
+
     #@orm.reconstructor
     def processEnergy(self):
         records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="Energest").all()
