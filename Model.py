@@ -366,7 +366,7 @@ class RPL(Base):
             data[index] = swCount
             index += 1
             width = 0.8
-            plt.text(((index-1) - (width/3)), swCount-2, str(swCount), color="black", fontsize=8)
+            #plt.text(((index-1) - (width/3)), swCount-2, str(swCount), color="black", fontsize=8)
         tempBuffer = io.BytesIO()
         plt.bar(data.keys(),data.values(), width=width, label="Parent Switches")
         #plt.bar_label(data.values(), padding=2)
@@ -374,7 +374,7 @@ class RPL(Base):
         #plt.ylim([0, 100])
         plt.xlabel("Nodes")
         plt.ylabel("Parent Switches")
-        plt.legend()
+        #plt.legend()
         plt.gcf().set_size_inches(8,6)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
@@ -738,7 +738,7 @@ class LinkStats(Base):
         plt.ylim([0, 100])
         plt.xlabel("Nodes")
         plt.ylabel("PDR (%)")
-        plt.legend()
+        #plt.legend()
         plt.title("Link-level PDR by node")
         plt.gcf().set_size_inches(8,4)
         plt.savefig(tempBuffer, format = 'png')
@@ -798,7 +798,7 @@ class PDR(Base):
             data[index] = pdr
             index += 1
             width = 0.8
-            plt.text(((index-1) - (width/3)), pdr-2, str(pdr), color="black", fontsize=8)
+            #plt.text(((index-1) - (width/3)), pdr-2, str(pdr), color="black", fontsize=8)
         #print ("PDR Global: ",round((node[True]/total)*100,2))
         tempBuffer = io.BytesIO()
         plt.bar(data.keys(),data.values(), width=width, label="PDR")
@@ -808,7 +808,7 @@ class PDR(Base):
         plt.xlabel("Nodes")
         plt.ylabel("PDR (%)")
         plt.title("Application PDR by node")
-        plt.legend()
+        #plt.legend()
         plt.gcf().set_size_inches(8,4)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode() 
