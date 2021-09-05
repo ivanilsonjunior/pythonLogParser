@@ -388,6 +388,7 @@ class RPL(Base):
         import matplotlib.pyplot as plt
         import io
         import base64
+        import math
         tempBuffer = io.BytesIO()
         plt.clf()
         G = nx.DiGraph()
@@ -413,12 +414,18 @@ class RPL(Base):
             else:
                 G.add_edge(nodeOrigin,str('N'+ str(int(nodeParent.split(":")[-1], 16))))
         val_map = {'N1': 1.0}
-        values = [val_map.get(node, 0.25) for node in G.nodes()]
-        #pos = nx.planar_layout(G)
-        #nx.draw(G, with_labels=True)
-        nx.draw_networkx_nodes(G, pos=gpos)
-        nx.draw_networkx_labels(G, pos=gpos)
-        nx.draw_networkx_edges(G, pos=gpos)
+        fig, ax = plt.subplots()
+        ylm = {'min': min(npos.values(), key=lambda y:y['y'])['y'], 'max': max(npos.values(), key=lambda y:y['y'])['y']}
+        ylimit = range(math.floor(ylm['min']),math.ceil(ylm['max'])+1)
+        plt.yticks(ylimit)
+        plt.yscale("linear")
+        plt.xlabel("X Position (m)")
+        plt.ylabel("Y Position (m)")
+        nx.draw_networkx_nodes(G, pos=gpos, ax=ax)
+        nx.draw_networkx_labels(G, pos=gpos, ax=ax)
+        nx.draw_networkx_edges(G, pos=gpos, ax=ax)
+        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        ax.set_title("Nodes Parent")
         plt.gcf().set_size_inches(8,6)
         #plt.show()
         #
