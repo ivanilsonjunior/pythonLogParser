@@ -730,7 +730,7 @@ class LinkStats(Base):
             data[index] = pdr
             index += 1
             width = 0.8
-            plt.text(((index-1) - (width/3)), pdr-2, str(pdr), color="black", fontsize=8)
+            #plt.text(((index-1) - (width/3)), pdr-2, str(pdr), color="black", fontsize=8)
         tempBuffer = io.BytesIO()
         plt.bar(data.keys(),data.values(), width=width, label="Link Status PDR")
         #plt.bar_label(data.values(), padding=2)
