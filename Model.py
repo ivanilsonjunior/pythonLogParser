@@ -740,7 +740,7 @@ class LinkStats(Base):
         plt.ylabel("PDR (%)")
         #plt.legend()
         plt.title("Link-level PDR by node")
-        plt.gcf().set_size_inches(8,4)
+        plt.gcf().set_size_inches(8,6)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
@@ -809,7 +809,7 @@ class PDR(Base):
         plt.ylabel("PDR (%)")
         plt.title("Application PDR by node")
         #plt.legend()
-        plt.gcf().set_size_inches(8,4)
+        plt.gcf().set_size_inches(8,6)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode() 
 
