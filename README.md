@@ -32,7 +32,7 @@ I've tested on Debian 10 and default-jdk
    - You should access the page via browser (http://localhost:5000) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
    - Inside the experiment page click on new Run
    - After the done you can extract the metrics from run
- 4. I made a installation over a fresh installed Debian 10 and works fine.
+ 4. I made a installation over a fresh installed Debian 10 and worked fine.
    ```
    mkdir deploy
    cd deploy/
