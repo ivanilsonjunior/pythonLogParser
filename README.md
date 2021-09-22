@@ -37,15 +37,13 @@ I've tested on Debian 10 and default-jdk
    mkdir deploy
    cd deploy/
    git clone https://github.com/contiki-ng/contiki-ng.git
-   sudo apt install build-essential doxygen git curl wireshark python-serial srecord rlwrap default-jre ant openjdk-11-jdk
+   sudo apt install build-essential doxygen git curl wireshark python-serial srecord rlwrap default-jre ant openjdk-11-jdk python3-pip
    export JAVA_HOME=/usr/lib/jvm/default-java
    cd contiki-ng/
    git submodule update --init --recursive
    cd examples/
    git clone https://github.com/ivanilsonjunior/pythonLogParser.git
    cd pythonLogParser/
-   apt install python3-pip
-   sudo apt install python3-pip
    python3 -m pip install -r requirements.txt
    python3 api.py
    ```
