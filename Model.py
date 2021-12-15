@@ -709,7 +709,11 @@ class LinkStats(Base):
         for n in range(self.metric.run.maxNodes):
             total = total + nodesStats[n]['tx']
             totalAck = totalAck + nodesStats[n]['ack']
-        return {'PDR': round((totalAck/total)*100,2), 'tx' :total, 'ack': totalAck}
+        try:
+            pdr = round((totalAck/total)*100,2)
+        except ZeroDivisionError:
+            pdr = 0
+        return {'PDR': pdr, 'tx' :total, 'ack': totalAck}
 
     def printPDR(self):
         data = {}
