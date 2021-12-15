@@ -13,6 +13,7 @@ org/**
 *.testlog
 *.log
 *.db-journal
+*.swp
 
 ### C ###
 # Prerequisites
