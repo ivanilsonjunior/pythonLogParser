@@ -22,7 +22,7 @@ TODO: Split apart the data from the presentation
 
 ## Install and Run
 
-I've tested on Debian 10 and default-jdk
+### Debian 10 and default-jdk
 
 1. Inside the [Contiki-NG](https://github.com/contiki-ng/contiki-ng) examples folder clone this repository
    1. The JAVA_HOME variable must be setted
@@ -45,6 +45,31 @@ I've tested on Debian 10 and default-jdk
    git clone https://github.com/ivanilsonjunior/pythonLogParser.git
    cd pythonLogParser/
    python3 -m pip install -r requirements.txt
+   python3 api.py
+   ```
+### CentOS
+1. Preamble
+   1. Install necessary packages/repos
+      ```
+      sudo yum groupinstall 'Development Tools' # I know... It's a lazy way... But be free to contribute with a refinement
+      sudo yum install ant
+      mkdir deploy # Target folder
+      cd deploy
+      git clone https://github.com/contiki-ng/contiki-ng.git # Contiki-NG Repo
+      git submodule update --init --recursive # Submodules (Eg: Cooja)
+      ```
+   2. Configure the Java Environment (You should put on .bashrc)
+      ```
+      export JAVA_HOME=$(dirname $(dirname $(readlink $(readlink $(which javac)))))
+      export PATH=$PATH:$JAVA_HOME/bin
+      export CLASSPATH=.:$JAVA_HOME/jre/lib:$JAVA_HOME/lib:$JAVA_HOME/lib/tools.jar
+      ```
+2. Inside the [Contiki-NG](https://github.com/contiki-ng/contiki-ng) examples folder clone this repository
+   ```
+   cd $WHEREVER_YOUR_CONTIKI-NG_FOLDER_IS/examples/
+   git clone https://github.com/ivanilsonjunior/pythonLogParser.git
+   cd pythonLogParser/
+   sudo pip install -r requirements.txt
    python3 api.py
    ```
  
