@@ -775,7 +775,10 @@ class PDR(Base):
             node = Counter(i)
             totalTrue += node[True]
             totalFalse += node[False]
-        return (round(totalTrue/(totalFalse+totalTrue)*100,2))
+        try:
+            return (round(totalTrue/(totalFalse+totalTrue)*100,2))
+        except ZeroDivisionError: # Happens when the node never ingress in TSCH
+            return 0.0
 
     def printPDR(self):
         data = {}
