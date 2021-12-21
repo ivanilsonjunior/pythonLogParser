@@ -44,8 +44,7 @@ TODO: Split apart the data from the presentation
    cd examples/
    git clone https://github.com/ivanilsonjunior/pythonLogParser.git
    cd pythonLogParser/
-   python3 -m pip install -r requirements.txt
-   python3 api.py
+   . runMe.sh
    ```
 ### CentOS
 1. Preamble
@@ -69,7 +68,7 @@ TODO: Split apart the data from the presentation
    cd $WHEREVER_YOUR_CONTIKI-NG_FOLDER_IS/examples/
    git clone https://github.com/ivanilsonjunior/pythonLogParser.git
    cd pythonLogParser/
-   sudo pip install -r requirements.txt
+   . runMe.sh
    python3 api.py
    ```
  
