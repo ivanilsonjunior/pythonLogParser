@@ -60,6 +60,7 @@
         <h1>Parameters: </h1>
         <h2>Simulation</h2>
         <ul>
+          <li>Run Duration: {{ run.getRunDuration() }}</li>
           <li>Number of nodes: {{run.maxNodes - 1}} </li>
           <li>Radio Medium: {{run.parameters['radiomedium']}} </li>
           <li>TX Range (m): {{run.parameters['transmitting_range']}} </li>
