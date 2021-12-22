@@ -207,6 +207,13 @@ class Run(Base):
                     continue
         return myDict
 
+    def getRunDuration(self) -> DateTime:
+        '''
+            Return the run duration time.
+        '''
+        return self.end - self.start
+
+
 class Record(Base):
     '''
     Represents an experiment's record
