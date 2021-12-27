@@ -12,6 +12,7 @@ from numpy import apply_along_axis, median
 import matplotlib
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.sqltypes import PickleType
+from sqlalchemy.ext.mutable import MutableDict
 matplotlib.use('Agg')
 import threading
 
@@ -213,6 +214,26 @@ class Run(Base):
         '''
         return self.end - self.start
 
+class ProjectConfFile(Base):
+    '''
+    Represents the project-conf.h file
+    '''
+    __tablename__ = 'projectconf'
+    id = Column(Integer, primary_key=True)
+    defines = Column(MutableDict.as_mutable(PickleType))
+
+    def __init__(self):
+        defines = {}
+    
+    def getFileContents(self):
+        content = ""
+        for k, v in self.defines.items():
+            content += (k + " " + str(v) + "\n")
+        return content
+    
+    def save(self, filename):
+        with open(filename, "w") as file:
+            file.write(self.getFileContents())
 
 class Record(Base):
     '''
