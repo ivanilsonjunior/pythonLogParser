@@ -306,6 +306,7 @@ class Metrics(Base):
             self.mac = MAC(self)
         self.linkstats = LinkStats(self)
         self.rpl = RPL(self)
+        self.energy = Energy(self)
         db.add(self)
         db.commit()
 
@@ -364,7 +365,7 @@ class RPL(Base):
     
     def getParentSwitches(self):
         results = {}
-        for i in range(0,(self.metric.run.maxNodes)):
+        for i in range(1,(self.metric.run.maxNodes)):
             results[str(i)] = []
         data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "RPL").filter(Record.rawData.contains("Parent switch:")).all()
         reExp = re.compile('\((.*?)\)')
@@ -906,6 +907,12 @@ class Latency(Base):
             if rec.rcv:
                 myData['N' + str(rec.srcNode)].append(rec.getLatency()/float(1000))
         return myData
+
+    def getLatencyMedianByNode(self):
+        retorno = {}
+        for k,v in self.application.latency.getLatencyDataByNode().items():
+            retorno[k] = median(v)
+        return retorno
 
     def printLatencyByNode(self):
         import io

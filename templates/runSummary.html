@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Metric Summary: {{"Run: " ~ run.id}}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+  </head>
+  <body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="#">Experiment {{run.experiment.name ~ " Run: " ~ run.id }}</a>
+    </nav>
+    <div class="jumbotron">
+      <div class="container">
+        <h1 class="display-4">Experiment {{run.experiment.name ~ " Run: " ~ run.id }}</h1>
+      </div>
+    </div>
+    <div class="container">
+      <h1>Parameters: </h1>
+      <h2>Simulation</h2>
+      <ul>
+        <li>Run Duration: {{ run.getRunDuration() }}</li>
+        <li>Number of nodes: {{run.maxNodes - 1}} </li>
+        <li>Radio Medium: {{run.parameters['radiomedium']}} </li>
+        <li>TX Range (m): {{run.parameters['transmitting_range']}} </li>
+        <li>Interference Range (m): {{run.parameters['interference_range']}} </li>
+        <li>Success TX ratio(m): {{run.parameters['success_ratio_tx']}} </li>
+        <li>Success RX ratio(m): {{run.parameters['success_ratio_rx']}} </li>
+        <li>Application Send Interval: {{run.parameters['APP_SEND_INTERVAL_SEC']}}</li>
+      </ul>
+      <h2>Stack</h2>
+      <ul>
+        <li>MAC: {{run.parameters['MAKE_MAC']}} </li>
+        {% if run.parameters['MAKE_MAC'] == "MAKE_MAC_TSCH" %}
+          <ul>
+            <li>TSCH_SCHEDULE_CONF_DEFAULT_LENGTH: {{run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']}}</li>
+          </ul>
+        {% endif %}
+        <li>NET: {{run.parameters['MAKE_NET']}} </li>
+        <li>ROUTING: {{run.parameters['MAKE_ROUTING']}} </li>
+          <ul>
+              <li>RPL Mod of Operation: {{run.parameters['RPL_CONF_MOP']}}</li>
+              <li>RPL Objective Funciton: {{run.parameters['RPL_CONF_OF_OCP']}}</li>
+          </ul>
+      </ul>
+      <h2>Position</h2>
+      <img src="data:image/png;base64,{{run.printNodesPosition()}}"/>
+      <h1>Metrics</h1>
+      <h2>Application</h2>
+      <div class="content">
+          <ul>
+            <li>Latency (Mean): {{ run.metric.application.latency.latencyMean() }} ms</li>
+            <li>Latency (Median): {{ run.metric.application.latency.latencyMedian() }} ms</li>
+            <h6>Node's Latency</h6>
+            <ul>
+              {% for k, v in run.metric.application.latency.getLatencyMedianByNode().items() %}
+                <li>Node: {{ k }} - {{ v }} ms</li>
+              {% endfor %}
+            </ul>
+            <li>PDR Global: {{ run.metric.application.pdr.getGlobalPDR() }}%</li>
+          </ul>
+      </div>
+      <h2>RPL</h2>
+      <div class="content">
+        <h3>Parent Switches</h3>
+        <ul>
+          {% for k, v in run.metric.rpl.getParentSwitches().items() %}
+            <li>Node: {{ k }} Parent Switches {{ v | length }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>

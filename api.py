@@ -109,5 +109,10 @@ def detailRun(id):
        hasMetric = True
     return render_template("runDetail.html", run=run, hasMetric=hasMetric)
 
+@app.route('/run/summary/<id>')
+def summaryRun(id):
+    run = db.query(Run).filter_by(id=id).first()
+    return render_template("runSummary.html", run=run)
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
