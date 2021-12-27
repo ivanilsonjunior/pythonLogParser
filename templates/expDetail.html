@@ -23,7 +23,7 @@
         </form>
 	  <ol>
 		  {%for run in exp.runs %}
-		  	<li><a href="/run/{{run.id}}"> {{ run }} </a></li>
+		  	<li><a href="/run/{{run.id}}"> {{ run }} </a> (<a href="/run/summary/{{run.id}}"> summary </a>)</li>
 		  {% endfor %}
 	  </ol>
           <p></p>
