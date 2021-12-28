@@ -73,7 +73,8 @@ class Experiment(Base):
             newRun.metric = Metrics(newRun)
             db.commit()
             return "Done"
-        except Exception:
+        except Exception as ex:
+            print (ex)
             return "Error"
 
 
@@ -314,8 +315,6 @@ class Metrics(Base):
         self.rpl = RPL(self)
         print("Processing Energy")
         self.energy = Energy(self)
-#        db.add(self)
-#        db.commit()
 
 class Application(Base):
     __tablename__ = 'application'
@@ -1053,6 +1052,7 @@ class Energy(Base):
 
     def __init__(self,metric):
         self.metric = metric
+        self.results = {}
         self.processEnergy()
     '''
     The Energest module reports a period each 60 seconds 
