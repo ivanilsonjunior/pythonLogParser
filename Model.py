@@ -4,6 +4,7 @@ Model class for Cooja System Log Parser
 
 '''
 from datetime import datetime
+from hashlib import new
 from re import S
 import re
 from types import new_class
@@ -69,6 +70,7 @@ class Experiment(Base):
             newRun.parameters = newRun.getParameters()
             db.add(newRun)
             self.runs.append(newRun)
+            newRun.metric = Metrics(newRun)
             db.commit()
             return "Done"
         except Exception:
@@ -170,11 +172,11 @@ class Run(Base):
                 if (line.startswith("Random") or line.startswith("Starting") or line.startswith("Script timed out") or line.startswith("TEST OK")):
                     continue
                 if (line.startswith("Test ended at simulation time:")):
-                    simTime = line.split(":")[1].strip()
+                    simTime = int(line.split(":")[1].strip())
                     continue
                 fields = line.split()
                 logTime = fields[0]
-                logNode = fields[1]
+                logNode = int(fields[1])
                 logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
                 logLevel = logDesc[0].strip()
                 logType = logDesc[1].strip()
@@ -300,15 +302,20 @@ class Metrics(Base):
     def __init__(self, run):
         self.run = run
         #print("Self lenght:" , len(self.run.records) )
+        print("Processing App")
         self.application = Application(self)
         self.application.process()
+        print("Processing MAC")
         if run.parameters['MAKE_MAC'] ==  "MAKE_MAC_TSCH":
             self.mac = MAC(self)
+        print("Processing LinkStatus")
         self.linkstats = LinkStats(self)
+        print("Processing RPL")
         self.rpl = RPL(self)
+        print("Processing Energy")
         self.energy = Energy(self)
-        db.add(self)
-        db.commit()
+#        db.add(self)
+#        db.commit()
 
 class Application(Base):
     __tablename__ = 'application'
@@ -333,7 +340,7 @@ class Application(Base):
             if rec.rawData.startswith("app generate"):
                 sequence = rec.rawData.split()[3].split("=")[1]
                 node = int(rec.rawData.split()[4].split("=")[1])
-                genTime = rec.simTime
+                genTime = int(rec.simTime)
                 dstNode = 1 #That simulation doesn't define a customized sink
                 #print("Node: " ,  node , "Seq: " , sequence , "Generation Time: ", genTime ,"Destination" , dstNode)
                 newLatRec = AppRecord(genTime,node,dstNode,sequence)
@@ -343,7 +350,7 @@ class Application(Base):
             
             if rec.rawData.startswith("app receive"):
                 sequence = rec.rawData.split()[3].split("=")[1]
-                recTime = rec.simTime
+                recTime = int(rec.simTime)
                 srcNode = int (rec.rawData.split()[4].split("=")[1].split(":")[5], 16) # Converts Hex to Dec
                 for record in self.records:
                     if (record.srcNode == srcNode and record.sqnNumb == sequence):
@@ -532,12 +539,13 @@ class MAC(Base):
     __tablename__ = 'mac'
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="mac")
-    results = None
+    results = Column(PickleType)
 
     def __init__(self,metric):
         self.metric = metric
+        self.processFrames()
 
-    @orm.reconstructor
+    #@orm.reconstructor
     def processFrames(self):
         results = {}
         for i in range(0,(self.metric.run.maxNodes)):
@@ -611,10 +619,10 @@ class MAC(Base):
         results = [[] for x in range(self.metric.run.maxNodes)]
         for rec in data:
             if rec.rawData.startswith("leaving the network"):
-                results[rec.node].append(tuple((rec.simTime//1000,False)))
+                results[int(rec.node)].append(tuple((float(rec.simTime)//1000,False)))
                 continue
             if rec.rawData.startswith("association done"):
-                results[rec.node].append(tuple((rec.simTime//1000, True)))
+                results[int(rec.node)].append(tuple((float(rec.simTime)//1000, True)))
                 continue
         return results
     
@@ -1041,7 +1049,7 @@ class Energy(Base):
     __tablename__ = 'energy'
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="energy")
-    results = {}
+    results = Column(PickleType)
 
     def __init__(self,metric):
         self.metric = metric
