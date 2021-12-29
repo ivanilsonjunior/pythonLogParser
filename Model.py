@@ -68,9 +68,9 @@ class Experiment(Base):
             newRun.end = datetime.now()
             newRun.processRun()
             newRun.parameters = newRun.getParameters()
-            db.add(newRun)
             self.runs.append(newRun)
             newRun.metric = Metrics(newRun)
+            db.add(newRun)
             db.commit()
             return "Done"
         except Exception as ex:
@@ -183,7 +183,7 @@ class Run(Base):
                 logType = logDesc[1].strip()
                 data = line.split("]")[1].strip()
                 newRecord = Record(logTime,logNode,logLevel,logType,data,self)
-                db.add(newRecord)
+                #db.add(newRecord)
                 self.records.append(newRecord)
     
     def getParameters(self):
