@@ -337,7 +337,7 @@ class Application(Base):
         data = self.metric.run.records
         for rec in data:
             if rec.rawData.startswith("app generate"):
-                sequence = rec.rawData.split()[3].split("=")[1]
+                sequence = int(rec.rawData.split()[3].split("=")[1])
                 node = int(rec.rawData.split()[4].split("=")[1])
                 genTime = int(rec.simTime)
                 dstNode = 1 #That simulation doesn't define a customized sink
@@ -348,9 +348,9 @@ class Application(Base):
                 continue
             
             if rec.rawData.startswith("app receive"):
-                sequence = rec.rawData.split()[3].split("=")[1]
+                sequence = int(rec.rawData.split()[3].split("=")[1])
                 recTime = int(rec.simTime)
-                srcNode = int (rec.rawData.split()[4].split("=")[1].split(":")[5], 16) # Converts Hex to Dec
+                srcNode = int(rec.rawData.split()[4].split("=")[1].split(":")[5], 16) # Converts Hex to Dec
                 for record in self.records:
                     if (record.srcNode == srcNode and record.sqnNumb == sequence):
                         record.rcvPkg(recTime)
