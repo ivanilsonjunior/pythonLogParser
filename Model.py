@@ -72,6 +72,7 @@ class Experiment(Base):
             newRun.metric = Metrics(newRun)
             db.add(newRun)
             db.commit()
+            newRun.metric.application.process()
             return "Done"
         except Exception as ex:
             print (ex)
@@ -303,17 +304,16 @@ class Metrics(Base):
     def __init__(self, run):
         self.run = run
         #print("Self lenght:" , len(self.run.records) )
-        print("Processing App")
         self.application = Application(self)
-        self.application.process()
-        print("Processing MAC")
+        #self.application.process()
+        #print("Processing MAC")
         if run.parameters['MAKE_MAC'] ==  "MAKE_MAC_TSCH":
             self.mac = MAC(self)
-        print("Processing LinkStatus")
+        #print("Processing LinkStatus")
         self.linkstats = LinkStats(self)
-        print("Processing RPL")
+        #print("Processing RPL")
         self.rpl = RPL(self)
-        print("Processing Energy")
+        #print("Processing Energy")
         self.energy = Energy(self)
 
 class Application(Base):
@@ -325,6 +325,7 @@ class Application(Base):
     latency = relationship("Latency", back_populates="application")
     pdr_id = Column(Integer, ForeignKey('pdrs.id')) # The ForeignKey must be the physical ID, not the Object.id
     pdr = relationship("PDR", back_populates="application")
+    records = relationship("AppRecord", back_populates="application")
 
 
     def __init__(self,metric):
@@ -333,6 +334,7 @@ class Application(Base):
         self.pdr = PDR(self)
 
     def process(self):
+        print("Processing App")
         #data = db.query(Record).filter_by(run = run).filter_by(recordType = "App").all()
         data = self.metric.run.records
         for rec in data:
@@ -344,6 +346,7 @@ class Application(Base):
                 #print("Node: " ,  node , "Seq: " , sequence , "Generation Time: ", genTime ,"Destination" , dstNode)
                 newLatRec = AppRecord(genTime,node,dstNode,sequence)
                 newLatRec.rcv = False
+                db.add(newLatRec)
                 self.records.append(newLatRec)
                 continue
             
@@ -357,6 +360,7 @@ class Application(Base):
                         record.rcv = True
                 #print("Node: " ,  srcNode  , "Seq: " , sequence , "Receive Time: ", recTime)
                         break
+        print("Done")
 
 class RPL(Base):
     '''
@@ -1091,5 +1095,5 @@ class Energy(Base):
 
 Experiment.runs = relationship("Run", order_by = Run.id, back_populates="experiment")
 Run.records = relationship("Record", order_by = Record.id, back_populates="run")
-Application.records = relationship("AppRecord", order_by = AppRecord.id, back_populates="application")
+#Application.records = relationship("AppRecord", order_by = AppRecord.id, back_populates="application")
 meta.create_all()
