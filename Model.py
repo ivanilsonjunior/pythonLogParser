@@ -360,6 +360,7 @@ class Application(Base):
                         record.rcv = True
                 #print("Node: " ,  srcNode  , "Seq: " , sequence , "Receive Time: ", recTime)
                         break
+        db.commit()
         print("Done")
 
 class RPL(Base):
