@@ -375,7 +375,7 @@ class RPL(Base):
     def __init__(self,metric):
         self.metric = metric
     
-    def getParentSwitches(self):
+    def processParentSwitches(self):
         results = {}
         for i in range(1,(self.metric.run.maxNodes)):
             results[str(i)] = []
@@ -393,7 +393,7 @@ class RPL(Base):
 
     def printParentSwitches(self):
         data = {}
-        results = self.getParentSwitches()
+        results = self.processParentSwitches()
         from collections import Counter
         index = 2
         import io
@@ -437,7 +437,7 @@ class RPL(Base):
         gpos = {}
         for node in npos:
             gpos [node] =  (npos[node]['x'],npos[node]['y'])
-        data = self.getParentSwitches()
+        data = self.processParentSwitches()
         for i in data:
             if i == '0' and i == '1':
                 continue
