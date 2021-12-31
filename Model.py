@@ -881,34 +881,22 @@ class Latency(Base):
 
     def latencyMean(self):
         from numpy import mean
-        start = 2
         nodes = self.getNodes()
-        for i in nodes[start:]:
-            valuesNodes = []
-            values = []
-            for j in i:
-                values.append(j[1]) # Miliseconds 10 ^ -3
-                valuesNodes.append(j[1]) # Miliseconds 10 ^ -3
-            #print("Node:" + str(start) + " Size: " + str(len(valuesNodes)) + " Mean:" + str(round(mean(valuesNodes),2)))
-            start += 1
+        values = []
+        for register in nodes:
+            for value in register:
+                values.append(value[1])
         globalMean = round(mean(values),3)
-        #print("Size: " + str(len(values)) + " Mean: " + str(globalMean))
         return globalMean
 
     def latencyMedian(self):
         from numpy import median
-        start = 2
         nodes = self.getNodes()
-        for i in nodes[start:]:
-            valuesNodes = []
-            values = []
-            for j in i:
-                values.append(j[1]) # Miliseconds 10 ^ -3
-                valuesNodes.append(j[1]) # Miliseconds 10 ^ -3
-            #print("Node:" + str(start) + " Size: " + str(len(valuesNodes)) + " Mean:" + str(round(mean(valuesNodes),2)))
-            start += 1
+        values = []
+        for register in nodes:
+            for value in register:
+                values.append(value[1])
         globalMedian = round(median(values),3)
-        #print("Size: " + str(len(values)) + " Mean: " + str(globalMean))
         return globalMedian
 
     def getLatencyDataByNode(self):
