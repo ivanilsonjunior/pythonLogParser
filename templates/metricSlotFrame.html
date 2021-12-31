@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Metric detail: </title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+  </head>
+  <body>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Sorted By SlotFrame Size </a>
+      </nav>
+      <div class="jumbotron">
+        <div class="container">
+          <h1 class="display-4">Slotframe Size: {{ id }} </h1>
+        </div>
+      </div>
+      <div class="container">
+        {% for run in retorno %}
+        <h3>Experience({{run.id}}): {{ run.experiment.experimentFile }}</h3>
+        <h3>SlotFrame Size: {{ run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] }}</h3>
+        <h3>Send Interval: {{ run.parameters['APP_SEND_INTERVAL_SEC'] }}</h3>
+        <h4>Metrics: </h4>
+        <ul>
+          <li>Application PDR: {{run.metric.application.pdr.getGlobalPDR()}}</li>
+          <li>Latency: {{run.metric.application.latency.latencyMean()}}</li>
+          <li>TSCH Disconnections: {{run.metric.mac.getDisconnections()}}</li>
+          <li>Link Level PDR: {{run.metric.linkstats.getPDR()}}</li>
+        </ul>
+        {% endfor %}
+      </div>
+  </body>
+</html>

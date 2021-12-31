@@ -114,5 +114,16 @@ def summaryRun(id):
     run = db.query(Run).filter_by(id=id).first()
     return render_template("runSummary.html", run=run)
 
+@app.route('/metrics/slotframe/<size>')
+def metricBySlotFrame(size):
+    retorno = []
+    runs = db.query(Run).all()
+    for r in runs:
+        parameters = r.parameters
+        if parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == size:
+            retorno.append(r)    
+    return render_template("metricSlotFrame.html", id=size, retorno=retorno)
+        
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9001, debug=True)
