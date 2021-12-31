@@ -8,6 +8,7 @@ from hashlib import new
 from re import S
 import re
 from types import new_class
+from typing import Counter
 from xml.dom import minidom
 from numpy import apply_along_axis, median
 import matplotlib
@@ -715,6 +716,16 @@ class MAC(Base):
         plt.gcf().set_size_inches(8,6)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
+
+    def getDisconnections(self):
+        '''
+        Get the amount of disconnections from TSCH
+        '''
+        itens = []
+        for i in self.processIngress():
+            for item in i:
+                itens.append(item[1])
+        return (Counter(itens)[False])
 
 
 class LinkStats(Base):
