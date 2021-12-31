@@ -15,7 +15,7 @@
       </div>
       <div class="container">
         {% for run in retorno %}
-        <h3>Experience({{run.id}}): {{ run.experiment.experimentFile }}</h3>
+        <h3>Experience(<a href="/run/{{run.id}}"> {{ run.id }} </a>): {{ run.experiment.experimentFile }}</h3>
         <h3>SlotFrame Size: {{ run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] }}</h3>
         <h3>Send Interval: {{ run.parameters['APP_SEND_INTERVAL_SEC'] }}</h3>
         <h4>Metrics: </h4>
