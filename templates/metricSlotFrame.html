@@ -22,6 +22,8 @@
         <ul>
           <li>Application PDR: {{run.metric.application.pdr.getGlobalPDR()}}</li>
           <li>Latency: {{run.metric.application.latency.latencyMean()}}</li>
+          <li>Application Latency: {{run.metric.application.latency.latencyMean()}}</li>
+          <li>RPL Parent Switches: {{run.metric.rpl.getParentSwitches()}}</li>
           <li>TSCH Disconnections: {{run.metric.mac.getDisconnections()}}</li>
           <li>Link Level PDR: {{run.metric.linkstats.getPDR()}}</li>
         </ul>

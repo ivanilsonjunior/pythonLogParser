@@ -391,6 +391,13 @@ class RPL(Base):
             results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
         return results
 
+    def getParentSwitches(self):
+        retorno = 0
+        psw = self.processParentSwitches()
+        for i in psw:
+            retorno += len(psw[i])
+        return retorno
+
     def printParentSwitches(self):
         data = {}
         results = self.processParentSwitches()
