@@ -3,6 +3,45 @@
   <head>
     <title>Edge Detail Site</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+    <style>
+      ul, #myUL {
+        list-style-type: none;
+      }
+      
+      #myUL {
+        margin: 0;
+        padding: 0;
+      }
+      
+      .caret {
+        cursor: pointer;
+        -webkit-user-select: none; /* Safari 3.1+ */
+        -moz-user-select: none; /* Firefox 2+ */
+        -ms-user-select: none; /* IE 10+ */
+        user-select: none;
+      }
+      
+      .caret::before {
+        content: "\25B6";
+        color: black;
+        display: inline-block;
+        margin-right: 6px;
+      }
+      
+      .caret-down::before {
+        -ms-transform: rotate(90deg); /* IE 9 */
+        -webkit-transform: rotate(90deg); /* Safari */
+        transform: rotate(90deg);  
+      }
+      
+      .nested {
+        display: none;
+      }
+      
+      .active {
+        display: block;
+      }
+      </style>
   </head>
   <body>
     <h1>Metrics Parser</h1>
@@ -25,11 +64,54 @@
         </div>
       </div>
       <div class="container">
-        <p>Experiments</p>
-	{% for exp in experiments %}
-	<p><a href="/experiment/{{exp.id}}">Id: {{ exp.id }} - {{ exp.name }} ( {{ exp.experimentFile }} )</a></p>
-	{% endfor %}
+        <h3>Experiments</h3>
+          {% for exp in experiments %}
+          <p><a href="/experiment/{{exp.id}}">Id: {{ exp.id }} - {{ exp.name }} ( {{ exp.experimentFile }} )</a></p>
+          {% endfor %}
       </div>
     </div>
+    <div class="container">
+      <ul id="myUL">
+        <li><span class="caret">Filters</span>
+          <ul class="nested">
+            <li><span class="caret">Experiment</span>
+              <ul class="nested">
+                {% for exp in experiments %}
+                <li><a href="/experiment/{{exp.id}}">{{ exp.experimentFile }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+            <li><span class="caret">SlotFrame length</span>
+              <ul class="nested">
+                <li><a href="/metrics/slotframe/5">5</a></li>
+                <li><a href="/metrics/slotframe/7">7</a></li>
+                <li><a href="/metrics/slotframe/11">11</a></li>
+              </ul>
+            </li>
+            <li><span class="caret">App sent interval</span>
+              <ul class="nested">
+                <li><a href="/metrics/sendrate/5">5</a></li>
+                <li><a href="/metrics/sendrate/4">4</a></li>
+                <li><a href="/metrics/sendrate/3">3</a></li>
+                <li><a href="/metrics/sendrate/2">2</a></li>
+                <li><a href="/metrics/sendrate/1">1</a></li>
+                <li><a href="/metrics/sendrate/3600">0</a></li> 
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <script>
+      var toggler = document.getElementsByClassName("caret");
+      var i;
+      
+      for (i = 0; i < toggler.length; i++) {
+        toggler[i].addEventListener("click", function() {
+          this.parentElement.querySelector(".nested").classList.toggle("active");
+          this.classList.toggle("caret-down");
+        });
+      }
+    </script>
   </body>
 </html>

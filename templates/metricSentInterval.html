@@ -3,6 +3,45 @@
   <head>
     <title>Metric detail: </title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+    <style>
+      ul, #myUL {
+        list-style-type: none;
+      }
+      
+      #myUL {
+        margin: 0;
+        padding: 0;
+      }
+      
+      .caret {
+        cursor: pointer;
+        -webkit-user-select: none; /* Safari 3.1+ */
+        -moz-user-select: none; /* Firefox 2+ */
+        -ms-user-select: none; /* IE 10+ */
+        user-select: none;
+      }
+      
+      .caret::before {
+        content: "\25B6";
+        color: black;
+        display: inline-block;
+        margin-right: 6px;
+      }
+      
+      .caret-down::before {
+        -ms-transform: rotate(90deg); /* IE 9 */
+        -webkit-transform: rotate(90deg); /* Safari */
+        transform: rotate(90deg);  
+      }
+      
+      .nested {
+        display: none;
+      }
+      
+      .active {
+        display: block;
+      }
+      </style>
   </head>
   <body>
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -14,20 +53,38 @@
         </div>
       </div>
       <div class="container">
-        {% for run in retorno %}
-        <h3>Experience(<a href="/run/{{run.id}}"> {{ run.id }} </a>): {{ run.experiment.experimentFile }}</h3>
-        <h3>SlotFrame Size: {{ run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] }}</h3>
-        <h3>Send Interval: {{ run.parameters['APP_SEND_INTERVAL_SEC'] }}</h3>
-        <h4>Metrics: </h4>
-        <ul>
-          <li>Application PDR: {{run.metric.application.pdr.getGlobalPDR()}}</li>
-          <li>Application Latency: {{run.metric.application.latency.latencyMean()}}</li>
-          <li>RPL Parent Switches: {{run.metric.rpl.getParentSwitches()}}</li>
-          <li>TSCH Disconnections: {{run.metric.mac.getDisconnections()}}</li>
-          <li>TSCH Retransmissions: {{run.metric.mac.getRetransmissions()}}</li>
-          <li>Link Level PDR: {{run.metric.linkstats.getPDR()}}</li>
+        <ul id="myUL">
+          {% for run in retorno %}
+          <ul id="myUL">
+            <li><span class="caret">{{ run.experiment.experimentFile }}: Run(<a href="/run/{{run.id}}"> {{ run.id }} </a>)</span>
+              <ul class="nested">
+                <li>SlotFrame Size: {{ run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] }}</li>
+                <li>Send Interval: {{ run.parameters['APP_SEND_INTERVAL_SEC'] }}</li>
+                <li><span class="caret">Metrics:</span>
+                  <ul class="nested">
+                    <li>Application PDR: {{run.metric.application.pdr.getGlobalPDR()}}</li>
+                    <li>Application Latency: {{run.metric.application.latency.latencyMean()}}</li>
+                    <li>RPL Parent Switches: {{run.metric.rpl.getParentSwitches()}}</li>
+                    <li>TSCH Disconnections: {{run.metric.mac.getDisconnections()}}</li>
+                    <li>TSCH Retransmissions: {{run.metric.mac.getRetransmissions()}}</li>
+                    <li>Link Level PDR: {{run.metric.linkstats.getPDR()}}</li>
+                </li>
+              </ul>
+            </li>
+          </ul>
         </ul>
-        {% endfor %}
+          {% endfor %}
       </div>
+      <script>
+        var toggler = document.getElementsByClassName("caret");
+        var i;
+        
+        for (i = 0; i < toggler.length; i++) {
+          toggler[i].addEventListener("click", function() {
+            this.parentElement.querySelector(".nested").classList.toggle("active");
+            this.classList.toggle("caret-down");
+          });
+        }
+      </script>
   </body>
 </html>

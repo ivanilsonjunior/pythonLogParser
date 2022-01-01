@@ -63,7 +63,7 @@
       <div class="content">
         <h3>Parent Switches</h3>
         <ul>
-          {% for k, v in run.metric.rpl.getParentSwitches().items() %}
+          {% for k, v in run.metric.rpl.processParentSwitches().items() %}
             <li>Node: {{ k }} Parent Switches {{ v | length }}</li>
           {% endfor %}
         </ul>
