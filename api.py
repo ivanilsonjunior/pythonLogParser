@@ -123,6 +123,16 @@ def metricBySlotFrame(size):
         if parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == size:
             retorno.append(r)    
     return render_template("metricSlotFrame.html", id=size, retorno=retorno)
+
+@app.route('/metrics/sendrate/<interval>')
+def metricBySendInterval(interval):
+    retorno = []
+    runs = db.query(Run).all()
+    for r in runs:
+        parameters = r.parameters
+        if parameters['APP_SEND_INTERVAL_SEC'] == interval:
+            retorno.append(r)    
+    return render_template("metricSentInterval.html", id=interval, retorno=retorno)
         
 
 if __name__ == '__main__':
