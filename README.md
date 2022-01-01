@@ -29,7 +29,7 @@ TODO: Split apart the data from the presentation
 2. After the clonning part execute '''python3 -m pip install -r requirements.txt'''
 3. Inside the created folder execute the API 'python3 api.py'
    - At the first run a SQLite DB Metrics.db will be created
-   - You should access the page via browser (http://localhost:5000) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
+   - You should access the page via browser (http://localhost:9001) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
    - Inside the experiment page click on new Run
    - After the done you can extract the metrics from run
  4. I made a installation over a fresh installed Debian 10 and worked fine.
