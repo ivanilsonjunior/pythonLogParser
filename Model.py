@@ -669,7 +669,25 @@ class MAC(Base):
         plt.yticks(range(2,self.metric.run.maxNodes))
         plt.title("Node Ingress (TSCH)")
         plt.savefig(tempBuffer, format = 'png')
-        return base64.b64encode(tempBuffer.getvalue()).decode()         
+        return base64.b64encode(tempBuffer.getvalue()).decode()
+
+    def getRetransmissions(self):
+        retorno = {}
+        retrans = []
+        frames = self.results.items()
+        for i, j in frames:
+            for m in j:
+                if m.isReceived and m.isSent:
+                    retrans.append(m.retransmissions())
+        totalRetrans = sum(retrans)
+        totalAckFrames = len(retrans)
+        totalResFrames = Counter(retrans)[0]
+        retorno['retransmissions'] = totalRetrans
+        retorno['totalAck'] = totalAckFrames
+        retorno['retransRate'] = totalRetrans/totalAckFrames
+        retorno['noResFrames'] = totalResFrames
+        retorno['resFrames'] = totalAckFrames - totalResFrames
+        return retorno
 
     def printRetransmissions(self):
         import io
