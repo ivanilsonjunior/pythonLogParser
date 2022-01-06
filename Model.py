@@ -91,7 +91,6 @@ class Experiment(Base):
         for i in permutations_dicts:
             for k in i.keys():
                 self.confFile.defines[k] =  i[k]
-            print ("Rode aqui: ", self.confFile)
             # Creating temp folder
             import os
             import shutil
