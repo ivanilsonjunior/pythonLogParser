@@ -17,6 +17,7 @@ from sqlalchemy.sql.sqltypes import PickleType
 from sqlalchemy.ext.mutable import MutableDict
 matplotlib.use('Agg')
 import threading
+import itertools
 
 from sqlalchemy.sql.elements import TextClause
 from Runner import Runner
@@ -58,6 +59,8 @@ class Experiment(Base):
     name = Column(String(50), nullable=False)
     #parameters = Column(String (200), nullable=False)
     experimentFile = Column(String (200), nullable=False)
+    confFile_id = Column(Integer, ForeignKey('projectconf.id'))
+    confFile = relationship("ProjectConfFile", uselist=False)
     def run(self):
         runner = Runner(str(self.experimentFile))
         newRun = Run()
@@ -79,6 +82,53 @@ class Experiment(Base):
             print (ex)
             return "Error"
 
+    def bulkRun(self, dictVariations):
+        '''
+        bulkRun was made for perform various run by variation of project.conf parameters. You should pass a dict with project.conf defines variations ex: dictVariations = {'TSCH_SCHEDULE_CONF_DEFAULT_LENGTH': [5,7,9], 'APP_SEND_INTERVAL_SEC': [1,3,5]}
+        '''
+        keys, values = zip(*dictVariations.items())
+        permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
+        for i in permutations_dicts:
+            for k in i.keys():
+                self.confFile.defines[k] =  i[k]
+            print ("Rode aqui: ", self.confFile)
+            # Creating temp folder
+            import os
+            import shutil
+            if os.path.isdir("temp"):
+                shutil.rmtree("temp")
+            os.mkdir("temp")
+            #copying files
+            shutil.copy(self.experimentFile, "temp")
+            shutil.copy("Makefile","temp")
+            # TODO: I Should get the mote.c file via .csc file
+            shutil.copy("node.c","temp")
+            self.confFile.save("temp/project-conf.h")
+            #Adjsting the Makefile for the Contiki's right place
+            with open('temp/Makefile','r') as file:
+                filedata = file.read()
+                filedata = filedata.replace('../..','../../..')
+            with open('temp/Makefile','w') as file:
+                file.write(filedata)
+            runner = Runner(str("temp/" + self.experimentFile))
+            newRun = Run()
+            newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
+            newRun.experiment = self
+            newRun.start = datetime.now()
+            try:
+                runner.run()
+                newRun.end = datetime.now()
+                newRun.processRun()
+                newRun.parameters = newRun.getBulkParameters()
+                self.runs.append(newRun)
+                newRun.metric = Metrics(newRun)
+                db.add(newRun)
+                db.commit()
+                newRun.metric.application.process()
+                #continue
+            except Exception as ex:
+                print (ex)
+                return "Error"
 
 class Run(Base):
     '''
@@ -213,6 +263,31 @@ class Run(Base):
                     continue
         return myDict
 
+    def getBulkParameters(self):
+        '''
+        Adapted from: https://stackoverflow.com/questions/2804543/read-subprocess-stdout-line-by-line
+        '''
+        import subprocess
+        proc = subprocess.Popen(['make','viewconf'],bufsize=1, cwd="temp", universal_newlines=True, stdout=subprocess.PIPE)
+        myDict = {}
+        for param in ['radiomedium','transmitting_range','interference_range','success_ratio_tx','success_ratio_rx']:
+            myDict[param] = str(minidom.parse(self.experiment.experimentFile).getElementsByTagName(param)[0].firstChild.data).strip()
+        for line in iter(proc.stdout.readline,''):
+            if not line:
+                break
+            if line.startswith("####"):
+                line = line.split()
+                try:
+                    #print (line[1].split("\"")[1] , "value", line [4])
+                    myDict[line[1].split("\"")[1]] = line [4]
+                except IndexError:
+                    if (line[1].split("\"")[1].startswith("MAKE")):
+                        #print (line[1].split("\"")[1] , "value", line [3])
+                        myDict[line[1].split("\"")[1]] = line [3]
+                        continue
+                    continue
+        return myDict
+
     def getRunDuration(self) -> DateTime:
         '''
             Return the run duration time.
@@ -233,7 +308,7 @@ class ProjectConfFile(Base):
     def getFileContents(self):
         content = ""
         for k, v in self.defines.items():
-            content += (k + " " + str(v) + "\n")
+            content += ("#define " + k + " " + str(v) + "\n")
         return content
     
     def save(self, filename):
