@@ -566,8 +566,8 @@ class MACMessage(Base):
     seqno = 0
     queueNBROccupied = 0
     queueNBRSize = 0
-    queueGlobaOccupied = 0
-    queueGlobaSize = 0
+    queueGlobalOccupied = 0
+    queueGlobalSize = 0
     headerLen = 0
     dataLen = 0
     sentTime = 0
@@ -576,15 +576,15 @@ class MACMessage(Base):
     rcvTime = 0
     isReceived = False
     isSent = False
-    def __init__(self,origin,dest,enQue,seqno,queueNBROccupied,queueNBRSize,queueGlobaOccupied,queueGlobaSize,headerLen,dataLen):
+    def __init__(self,origin,dest,enQue,seqno,queueNBROccupied,queueNBRSize,queueGlobalOccupied,queueGlobalSize,headerLen,dataLen):
         self.origin = origin
         self.dest = dest
         self.enQueued = enQue
         self.seqno = seqno
         self.queueNBROccupied = queueNBROccupied
         self.queueNBRSize = queueNBRSize
-        self.queueGlobaOccupied = queueGlobaOccupied
-        self.queueGlobaSize = queueGlobaSize
+        self.queueGlobalOccupied = queueGlobalOccupied
+        self.queueGlobalSize = queueGlobalSize
         self.headerLen = headerLen
         self.dataLen = dataLen
     def sent(self, time, status, tx):
@@ -648,11 +648,11 @@ class MAC(Base):
                     seqnum = int(rec.rawData.split()[6].replace(',',''))
                     queueNBROccupied = int(rec.rawData.split()[8].split('/')[0])
                     queueNBRSize = int(rec.rawData.split()[8].split('/')[1])
-                    queueGlobaOccupied = int(rec.rawData.split()[9].replace(',','').split('/')[0])
-                    queueGlobaSize = int(rec.rawData.split()[9].replace(',','').split('/')[1])
+                    queueGlobalOccupied = int(rec.rawData.split()[9].replace(',','').split('/')[0])
+                    queueGlobalSize = int(rec.rawData.split()[9].replace(',','').split('/')[1])
                     headerLen = int(rec.rawData.split()[11])
                     dataLen = int(rec.rawData.split()[12])
-                    macMsg = MACMessage(origin, dest, enQueued, seqnum, queueNBROccupied, queueNBRSize, queueGlobaOccupied, queueGlobaSize, headerLen, dataLen)
+                    macMsg = MACMessage(origin, dest, enQueued, seqnum, queueNBROccupied, queueNBRSize, queueGlobalOccupied, queueGlobalSize, headerLen, dataLen)
                     if macMsg.dest == 0 or macMsg.dest == 65535:
                         macMsg.isReceived = True
                         macMsg.isSent = True
@@ -825,6 +825,46 @@ class MAC(Base):
             for item in i:
                 itens.append(item[1])
         return (Counter(itens)[False])
+
+    def getNBRQueueOccupation(self):
+        '''
+        Returns the NBR queue occupation and the variance
+        '''
+        import statistics
+        retorno = {}
+        for i in self.results.keys():
+            dataset = []
+            if(len(self.results[i]) == 0):
+                continue
+            frames = 0
+            queueOccup = 0
+            queueSize = 64
+            for j in self.results[i]:
+                frames += 1
+                queueOccup += (j.queueNBROccupied/queueSize)*100
+                dataset.append(j.queueNBROccupied)
+            retorno[str('N'+i)] = {'Occupation':queueOccup/frames,'variance':statistics.variance(dataset)}
+        return retorno
+
+    def getGlobalQueueOccupation(self):
+        '''
+        Returns the global queue occupation and the variance
+        '''
+        import statistics
+        retorno = {}
+        for i in self.results.keys():
+            dataset = []
+            if(len(self.results[i]) == 0):
+                continue
+            frames = 0
+            queueOccup = 0
+            queueSize = 64
+            for j in self.results[i]:
+                frames += 1
+                queueOccup += (j.queueGlobalOccupied/queueSize)*100
+                dataset.append(j.queueGlobalOccupied)
+            retorno[str('N'+i)] = {'Occupation':queueOccup/frames,'variance':statistics.variance(dataset)}
+        return retorno
 
 
 class LinkStats(Base):
