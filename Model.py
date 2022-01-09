@@ -36,8 +36,22 @@ from sqlalchemy import orm
 
 
 
-DBName = "Metrics.db"    
-engine = create_engine('sqlite:///' + DBName, connect_args={'check_same_thread': False}, echo = False)
+DBName = "Metrics.db"
+fileEngine = create_engine('sqlite:///' + DBName, connect_args={'check_same_thread': False}, echo = False)
+
+DBMemory = ":memory:"
+memEngine = create_engine('sqlite:///' + DBMemory, connect_args={'check_same_thread': False}, echo = False)
+memConnection = memEngine.raw_connection().connection
+engine = fileEngine
+
+#TODO: For increasing the flask speed change to true (I'll get a better way to do that)
+isMemory = False
+if isMemory:
+    import sqlite3
+    fisico = sqlite3.connect(DBName)
+    fisico.backup(memConnection)
+    engine = memEngine
+
 meta = MetaData()
 meta.bind = engine
 Base = declarative_base(metadata=meta)
