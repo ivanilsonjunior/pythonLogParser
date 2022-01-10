@@ -833,9 +833,9 @@ class MAC(Base):
                 itens.append(item[1])
         return (Counter(itens)[False])
 
-    def getNBRQueueOccupation(self):
+    def getNBRQueueOccupationByNode(self):
         '''
-        Returns the NBR queue occupation and the variance
+        Returns the NBR queue occupation and the variance by each node
         '''
         import statistics
         retorno = {}
@@ -843,14 +843,28 @@ class MAC(Base):
             dataset = []
             if(len(self.results[i]) == 0):
                 continue
-            frames = 0
-            queueOccup = 0
             queueSize = 64
             for j in self.results[i]:
-                frames += 1
-                queueOccup += (j.queueNBROccupied/queueSize)*100
                 dataset.append(j.queueNBROccupied)
-            retorno[str('N'+i)] = {'Occupation':queueOccup/frames,'variance':statistics.variance(dataset)}
+            retorno[str('N'+i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
+        return retorno
+
+    def getNBRQueueOccupation(self):
+        '''
+        Returns the NBR queue mean (lenght, occupation%) and the variance
+        '''
+        import statistics
+        retorno = {}
+        dataset = []
+        frames = 0
+        queueOccup = 0
+        queueSize = 64
+        for i in self.results.keys():
+            if(len(self.results[i]) == 0):
+                continue
+            for j in self.results[i]:
+                dataset.append(j.queueNBROccupied)
+        retorno =  {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
         return retorno
 
     def getGlobalQueueOccupation(self):
@@ -859,18 +873,30 @@ class MAC(Base):
         '''
         import statistics
         retorno = {}
+        dataset = []
+        queueSize = 64
+        for i in self.results.keys():
+            if(len(self.results[i]) == 0):
+                continue
+            for j in self.results[i]:
+                dataset.append(j.queueGlobalOccupied)
+            retorno =  {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
+        return retorno
+
+    def getGlobalQueueOccupationByNode(self):
+        '''
+        Returns the global queue occupation and the variance by each node
+        '''
+        import statistics
+        retorno = {}
         for i in self.results.keys():
             dataset = []
             if(len(self.results[i]) == 0):
                 continue
-            frames = 0
-            queueOccup = 0
             queueSize = 64
             for j in self.results[i]:
-                frames += 1
-                queueOccup += (j.queueGlobalOccupied/queueSize)*100
                 dataset.append(j.queueGlobalOccupied)
-            retorno[str('N'+i)] = {'Occupation':queueOccup/frames,'variance':statistics.variance(dataset)}
+            retorno[str('N'+i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
         return retorno
 
 
