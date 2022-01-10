@@ -880,7 +880,7 @@ class MAC(Base):
                 continue
             for j in self.results[i]:
                 dataset.append(j.queueGlobalOccupied)
-            retorno =  {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
+        retorno =  {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
         return retorno
 
     def getGlobalQueueOccupationByNode(self):
