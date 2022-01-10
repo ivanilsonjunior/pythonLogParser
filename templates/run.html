@@ -19,10 +19,10 @@
                     $('#isRun').html(data["run"]? "Yes" : "No");
                     $('#isDone').html(data["doneIn"]);
                     $('#progressDone').html(n);
-                    $('.progress-bar').animate({'width': n +'%'}, 100).attr('aria-valuenow', n); 
+                    $('.progress-bar').animate({'width': n +'%'}, 100).attr('aria-valuenow', n);    
+                    alert("Cooja simulation Done, " + data["logFile"] + " lines were generated, starting parser...\nIn few seconds a new Run will apears.");
                     $('.back').css('display', 'inline-block');
                     clearInterval(interval);
-                    //alert("Cooja simulation Done, " + data["logFile"] + " lines were generated, starting parser...\nIn few seconds a new Run will apears.");
                 }
                 $('#progressDone').html(n);
                 $('#isRun').html(data["run"]? "Yes" : "No");

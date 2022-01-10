@@ -833,11 +833,25 @@ class MAC(Base):
                 itens.append(item[1])
         return (Counter(itens)[False])
 
+    def getNBRQueueOccupationByNode(self):
+        '''
+        Returns the NBR queue occupation and the variance by each node
+        '''
+        import statistics
+        retorno = {}
+        for i in self.results.keys():
+            dataset = []
+            if(len(self.results[i]) == 0):
+                continue
+            queueSize = 64
+            for j in self.results[i]:
+                dataset.append(j.queueNBROccupied)
+            retorno[str('N'+i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
         return retorno
 
     def getNBRQueueOccupation(self):
         '''
-        Returns the NBR queue mean (length, occupation%) and the variance
+        Returns the NBR queue mean (lenght, occupation%) and the variance
         '''
         import statistics
         retorno = {}
@@ -853,24 +867,9 @@ class MAC(Base):
         retorno =  {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
         return retorno
 
-    def getNBRQueueOccupationByNode(self):
-        '''
-        Returns the NBR queue mean (length, occupation%) and the variance for each node
-        '''
-        import statistics
-        retorno = {}
-        for i in self.results.keys():
-            dataset = []
-            if(len(self.results[i]) == 0):
-                continue
-            queueSize = 64
-            for j in self.results[i]:
-                dataset.append(j.queueNBROccupied)
-            retorno[str('N'+i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
-
     def getGlobalQueueOccupation(self):
         '''
-        Returns the global queue mean (length, occupation%) and the variance
+        Returns the global queue occupation and the variance
         '''
         import statistics
         retorno = {}
@@ -886,7 +885,7 @@ class MAC(Base):
 
     def getGlobalQueueOccupationByNode(self):
         '''
-        Returns the global queue mean (length, occupation%) and the variance for each node
+        Returns the global queue occupation and the variance by each node
         '''
         import statistics
         retorno = {}
