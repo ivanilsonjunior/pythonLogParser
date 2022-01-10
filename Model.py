@@ -7,6 +7,7 @@ from datetime import datetime
 from hashlib import new
 from re import S
 import re
+import os
 from types import new_class
 from typing import Counter
 from xml.dom import minidom
@@ -43,14 +44,6 @@ DBMemory = ":memory:"
 memEngine = create_engine('sqlite:///' + DBMemory, connect_args={'check_same_thread': False}, echo = False)
 memConnection = memEngine.raw_connection().connection
 engine = fileEngine
-
-#TODO: For increasing the flask speed change to true (I'll get a better way to do that)
-isMemory = False
-if isMemory:
-    import sqlite3
-    fisico = sqlite3.connect(DBName)
-    fisico.backup(memConnection)
-    engine = memEngine
 
 meta = MetaData()
 meta.bind = engine

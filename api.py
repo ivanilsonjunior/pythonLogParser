@@ -1,7 +1,7 @@
 # app.py
 from os import name
 import threading
-from flask import Flask, render_template, send_file, Response, abort, jsonify, request, url_for, redirect
+from flask import Flask, render_template, send_file, Response, abort, jsonify, request, url_for, redirect, logging
 from sqlalchemy.sql import text
 # Para o upload de arquivos
 from werkzeug.utils import secure_filename
@@ -133,7 +133,29 @@ def metricBySendInterval(interval):
         if parameters['APP_SEND_INTERVAL_SEC'] == interval:
             retorno.append(r)    
     return render_template("metricSentInterval.html", id=interval, retorno=retorno)
-        
+
+@app.route('/admin/db/show', methods=['GET'])
+@auth.login_required
+def showDB():
+    import sqlite3
+    global engine
+    print ("Engine:", engine)
+    exp = db.query(Experiment).all()
+    qtd = len(exp)
+    return render_template("index.html", count=qtd, experiments=exp)   
+
+@app.route('/admin/db/switch', methods=['GET'])
+@auth.login_required
+def switchDB():
+    import sqlite3
+    global engine
+    print ("Engine:", engine)
+    exp = db.query(Experiment).all()
+    qtd = len(exp)
+    fisico = sqlite3.connect(DBName)
+    fisico.backup(memConnection)
+    engine = memEngine
+    return render_template("index.html", count=qtd, experiments=exp)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9001, debug=True)
