@@ -12,6 +12,8 @@ MAKE_ROUTING = MAKE_ROUTING_RPL_LITE
 
 # Energy usage estimation
 MODULES += os/services/simple-energest
+# 6Top
+#MODULES += os/net/mac/tsch/sixtop
 
 include $(CONTIKI)/Makefile.dir-variables
 include $(CONTIKI)/Makefile.include
