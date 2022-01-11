@@ -89,9 +89,9 @@ class Experiment(Base):
             print (ex)
             return "Error"
 
-    def bulkRun(self, dictVariations):
+    def bulkRun(self, dictVariations, repetitions):
         '''
-        bulkRun was made for perform various run by variation of project.conf parameters. You should pass a dict with project.conf defines variations ex: dictVariations = {'TSCH_SCHEDULE_CONF_DEFAULT_LENGTH': [5,7,9], 'APP_SEND_INTERVAL_SEC': [1,3,5]}
+        bulkRun was made for perform various run by variation of project.conf parameters. You should pass a dict with project.conf defines variations ex: dictVariations = {'TSCH_SCHEDULE_CONF_DEFAULT_LENGTH': [5,7,9], 'APP_SEND_INTERVAL_SEC': [1,3,5]} and the number of repetitions
         '''
         keys, values = zip(*dictVariations.items())
         permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
@@ -116,25 +116,32 @@ class Experiment(Base):
                 filedata = filedata.replace('../..','../../..')
             with open('temp/Makefile','w') as file:
                 file.write(filedata)
-            runner = Runner(str("temp/" + self.experimentFile))
-            newRun = Run()
-            newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
-            newRun.experiment = self
-            newRun.start = datetime.now()
-            try:
-                runner.run()
-                newRun.end = datetime.now()
-                newRun.processRun()
-                newRun.parameters = newRun.getBulkParameters()
-                self.runs.append(newRun)
-                newRun.metric = Metrics(newRun)
-                db.add(newRun)
-                db.commit()
-                newRun.metric.application.process()
-                #continue
-            except Exception as ex:
-                print (ex)
-                return "Error"
+            for run in range(repetitions):
+                import lxml.etree
+                import random
+                simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
+                rand = simFile.xpath("//randomseed")[0]
+                rand.text = str(random.randint(0,65535))
+                open(str("temp/" + self.experimentFile), 'w').write(lxml.etree.tounicode(simFile))
+                runner = Runner(str("temp/" + self.experimentFile))
+                newRun = Run()
+                newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
+                newRun.experiment = self
+                newRun.start = datetime.now()
+                try:
+                    runner.run()
+                    newRun.end = datetime.now()
+                    newRun.processRun()
+                    newRun.parameters = newRun.getBulkParameters()
+                    self.runs.append(newRun)
+                    newRun.metric = Metrics(newRun)
+                    db.add(newRun)
+                    db.commit()
+                    newRun.metric.application.process()
+                    #continue
+                except Exception as ex:
+                    print (ex)
+                    return "Error"
 
 class Run(Base):
     '''
