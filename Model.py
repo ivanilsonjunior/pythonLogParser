@@ -276,7 +276,7 @@ class Run(Base):
         import subprocess
         proc = subprocess.Popen(['make','viewconf'],bufsize=1, cwd="temp", universal_newlines=True, stdout=subprocess.PIPE)
         myDict = {}
-        for param in ['radiomedium','transmitting_range','interference_range','success_ratio_tx','success_ratio_rx']:
+        for param in ['randomseed','radiomedium','transmitting_range','interference_range','success_ratio_tx','success_ratio_rx']:
             myDict[param] = str(minidom.parse(self.experiment.experimentFile).getElementsByTagName(param)[0].firstChild.data).strip()
         for line in iter(proc.stdout.readline,''):
             if not line:
