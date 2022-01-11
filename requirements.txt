@@ -6,3 +6,4 @@ werkzeug
 matplotlib
 numpy
 networkx
+lxml
