@@ -405,6 +405,30 @@ class Metrics(Base):
         #print("Processing Energy")
         self.energy = Energy(self)
 
+    def getSummary(self):
+        '''
+        Here you should return the metrics that you want
+        '''
+        retorno = {}
+        retorno['app-latency'] = self.application.latency.latencyMean()
+        retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
+        retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
+        retransmissions = self.mac.getRetransmissions()
+        retorno['mac-retransmissions'] = retransmissions['retransmissions']
+        retorno['mac-retransRate'] = retransmissions['retransRate']
+        retorno['mac-disconnections'] = self.mac.getDisconnections()
+        nbrQueue = self.mac.getNBRQueueOccupation()
+        retorno['mac-queuenbr-length'] = nbrQueue['lenght']
+        retorno['mac-queuenbr-occupation'] = nbrQueue['occupation']
+        retorno['mac-queuenbr-variance'] = nbrQueue['variance']
+        globalQueue = self.mac.getGlobalQueueOccupation()
+        retorno['mac-queueglobal-length'] = globalQueue['lenght']
+        retorno['mac-queueglobal-occupation'] = globalQueue['occupation']
+        retorno['mac-queueglobal-variance'] = globalQueue['variance']
+        retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
+        return retorno
+
+
 class Application(Base):
     __tablename__ = 'application'
     id = Column(Integer, primary_key=True)
@@ -759,22 +783,30 @@ class MAC(Base):
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
-    def getRetransmissions(self):
+    def getRetransmissions(self) -> dict():
+        '''
+        Return the Experience retransmission metrics
+
+        :returns: dict()
+        '''
         retorno = {}
-        retrans = []
+        trams = []
         frames = self.results.items()
         for i, j in frames:
             for m in j:
                 if m.isReceived and m.isSent:
-                    retrans.append(m.retransmissions())
-        totalRetrans = sum(retrans)
-        totalAckFrames = len(retrans)
-        totalResFrames = Counter(retrans)[0]
+                    trams.append(m.retransmissions())
+        totalRetrans = sum(trams)
+        totalAckFrames = len(trams)
+        totalSuccessFrames = Counter(trams)[0] #Success = No need retrams
         retorno['retransmissions'] = totalRetrans
         retorno['totalAck'] = totalAckFrames
-        retorno['retransRate'] = totalRetrans/totalAckFrames
-        retorno['noResFrames'] = totalResFrames
-        retorno['resFrames'] = totalAckFrames - totalResFrames
+        retorno['totalSuccessFrames'] = totalSuccessFrames
+        retorno['resFrames'] = totalAckFrames - totalSuccessFrames
+        try:
+            retorno['retransRate'] = retorno['resFrames']/totalRetrans
+        except:
+            retorno['retransRate'] = 1
         return retorno
 
     def printRetransmissions(self):
