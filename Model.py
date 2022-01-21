@@ -16,9 +16,11 @@ import matplotlib
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.sqltypes import PickleType
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import MutableList
 matplotlib.use('Agg')
 import threading
 import itertools
+import pandas as pd
 
 from sqlalchemy.sql.elements import TextClause
 from Runner import Runner
@@ -418,11 +420,11 @@ class Metrics(Base):
         retorno['mac-retransRate'] = retransmissions['retransRate']
         retorno['mac-disconnections'] = self.mac.getDisconnections()
         nbrQueue = self.mac.getNBRQueueOccupation()
-        retorno['mac-queuenbr-length'] = nbrQueue['lenght']
+        retorno['mac-queuenbr-length'] = nbrQueue['length']
         retorno['mac-queuenbr-occupation'] = nbrQueue['occupation']
         retorno['mac-queuenbr-variance'] = nbrQueue['variance']
         globalQueue = self.mac.getGlobalQueueOccupation()
-        retorno['mac-queueglobal-length'] = globalQueue['lenght']
+        retorno['mac-queueglobal-length'] = globalQueue['length']
         retorno['mac-queueglobal-occupation'] = globalQueue['occupation']
         retorno['mac-queueglobal-variance'] = globalQueue['variance']
         retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
@@ -1260,48 +1262,61 @@ class AppRecord(Base):
         return self.rcvTime - self.genTime
 
 class Energy(Base):
+    '''
+    Energy-related Metrics
+    '''
     __tablename__ = 'energy'
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="energy")
-    results = Column(PickleType)
+    results = Column(MutableList.as_mutable(PickleType))
 
     def __init__(self,metric):
         self.metric = metric
-        self.results = {}
+        self.results = []
         self.processEnergy()
-    '''
-    The Energest module reports a period each 60 seconds 
+
+    def getChannelUtilization(self):
+        '''
+            The Energest module reports a period each 60 seconds 
+            :return: float
+        '''
+        return pd.DataFrame(self.results).set_index('time')['channel-utilization'].mean()
     
-    '''
-    def getRadioTime(self):
-        radio = {}
-        for node in self.results:
-            radio[node] = {}
-            for info in self.results[node]:
-                etime = (int(info)+1)*60 # Period #0 is the first period
-                tx =  self.results[node][info][4:][0]['Radio Tx']['spent']
-                rx = self.results[node][info][4:][1]['Radio Rx']['spent']
-                radio[node][etime] = [rx,tx]
-        return radio
+    def getRadioDutyCicle(self):
+        '''
+            Returns the
+            :return: float
+        '''
+
+        return pd.DataFrame(self.results).set_index('time')['duty-cycle'].mean()
+
+    def parseEnergest(self, log):
+        '''
+        method extracted from: https://github.com/contiki-ng/contiki-ng/blob/develop/examples/benchmarks/rpl-req-resp/parse.py
+        '''
+        res = re.compile('Radio Tx\s*:\s*(\d*)/\s*(\d+)').match(log)
+        if res:
+            tx = float(res.group(1))
+            total = float(res.group(2))
+            return {'channel-utilization': 100.*tx/total }
+        res = re.compile('Radio total\s*:\s*(\d*)/\s*(\d+)').match(log)
+        if res:
+            radio = float(res.group(1))
+            total = float(res.group(2))
+            return {'duty-cycle': 100.*radio/total }
+        return None
+
 
     #@orm.reconstructor
     def processEnergy(self):
         records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="Energest").all()
-        period = ""
-        for i in records:
-            if i.rawData.startswith('---'):
-                if not str(i.node) in self.results:
-                    self.results[str(i.node)] = {}
-                period = i.rawData.split()[3].split('#')[1]
-                self.results[str(i.node)][str(period)] = []
-                continue
-            if i.rawData.startswith('Total time'):
-                self.results[str(i.node)][str(period)].append({i.rawData.split(':')[0].strip() : int(i.rawData.split(':')[1].strip())})
-                continue
-            values = i.rawData.split(':')[1].strip()
-            self.results[str(i.node)][str(period)].append({i.rawData.split(':')[0].strip() : {'spent': int(values.split('/')[0]) , 'total': int(values.split()[1]) , 'permil': int(values.split()[2].split('(')[1])}})
-    
-    
+        for rec in records:
+            #if rec.recordType == "Energest": # No need because
+            parsing = self.parseEnergest(rec.rawData)
+            if parsing != None:
+                parsing['time'] = rec.simTime
+                self.results.append(parsing)    
+
 
 
 Experiment.runs = relationship("Run", order_by = Run.id, back_populates="experiment")
