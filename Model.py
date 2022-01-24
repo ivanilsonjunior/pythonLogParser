@@ -144,6 +144,39 @@ class Experiment(Base):
                 except Exception as ex:
                     print (ex)
                     return "Error"
+                    
+    def toCsv(self, filename):
+        '''
+        Its a personal demanding for my experiements. In my experiments I have run with SlotFrame length [5,7 and 11] and APP_SEDD_INTERVAL of [3600(No App data), 1, 2, 3, 4, 5]
+        '''
+        self = self
+        sfLen = ['5','7','11']
+        sendInterval = ['3600','1','2','3','4','5']
+        dataset = {}
+        for r in self.runs:
+            dataset[self.experimentFile] = {}
+            for sf in sfLen:
+                dataset[str(self.experimentFile)][sf] = {}
+                for s in sendInterval:
+                    dataset[str(self.experimentFile)][sf][s] = []
+        for r in self.runs:
+            for sf in sfLen:
+                if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
+                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append({"duty-cycle":r.metric.energy.getRadioDutyCicle(),"channel-utilization":r.metric
+        .energy.getChannelUtilization()})
+        dados = []
+        init = 0
+        for e in dataset.keys():
+            for sfleng in dataset[e].keys():
+                for sentInt in dataset[e][sfleng].keys():
+                    df = pd.DataFrame(dataset[e][sfleng][sentInt])
+                    data = {}
+                    data['SlotFrame Length'] = sfleng
+                    data['Sent Interval'] = sentInt
+                    data.update(json.loads(df.mean().to_json()))
+                    dados.append(data)
+        df = pd.json_normalize(dados) 
+        df.to_csv(filename)       
 
 class Run(Base):
     '''
