@@ -8,6 +8,7 @@ from hashlib import new
 from re import S
 import re
 import os
+import statistics
 from types import new_class
 from typing import Counter
 from xml.dom import minidom
@@ -144,7 +145,7 @@ class Experiment(Base):
                 except Exception as ex:
                     print (ex)
                     return "Error"
-                    
+
     def toCsv(self, filename):
         '''
         Its a personal demanding for my experiements. In my experiments I have run with SlotFrame length [5,7 and 11] and APP_SEDD_INTERVAL of [3600(No App data), 1, 2, 3, 4, 5]
@@ -162,8 +163,8 @@ class Experiment(Base):
         for r in self.runs:
             for sf in sfLen:
                 if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
-                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append({"duty-cycle":r.metric.energy.getRadioDutyCicle(),"channel-utilization":r.metric
-        .energy.getChannelUtilization()})
+                    #Put Here your metrics
+                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append({"avgHops":r.metric.rpl.getAverangeHops()})
         dados = []
         init = 0
         for e in dataset.keys():
@@ -522,7 +523,7 @@ class RPL(Base):
     def __init__(self,metric):
         self.metric = metric
     
-    def processParentSwitches(self):
+    def processParentSwitches(self) -> dict:
         results = {}
         for i in range(1,(self.metric.run.maxNodes)):
             results[str(i)] = []
@@ -538,12 +539,52 @@ class RPL(Base):
             results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
         return results
 
-    def getParentSwitches(self):
+    def getParentSwitches(self) -> int:
         retorno = 0
         psw = self.processParentSwitches()
         for i in psw:
             retorno += len(psw[i])
         return retorno
+
+    def getAverangeHops(self, slice = 300000000) -> float:
+        '''
+        Return the averange RPL hops at end method extracted and adapted from: https://github.com/contiki-ng/contiki-ng/blob/develop/examples/benchmarks/rpl-req-resp/parse.py
+
+        parameters: slice - The time interval for each measured slice
+        '''
+        isItIpv6 = '((?:(?:[0-9A-Fa-f]{1,4}:){6}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|::(?:[0-9A-Fa-f]{1,4}:){5}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){4}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){3}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,2}[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){2}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,3}[0-9A-Fa-f]{1,4})?::[0-9A-Fa-f]{1,4}:(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,4}[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,5}[0-9A-Fa-f]{1,4})?::[0-9A-Fa-f]{1,4}|(?:(?:[0-9A-Fa-f]{1,4}:){,6}[0-9A-Fa-f]{1,4})?::))'
+        parents = {}
+        time = slice
+        anterior = 0
+        endtime = 3600000000
+        retorno = []
+        while time < endtime:
+            records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="RPL").filter(Record.rawData.ilike('links:%')).filter(Record.simTime > anterior).filter(Record.simTime < time).all()
+            anterior = time
+            time += slice
+            for rec in records:
+                if rec.recordType == "RPL" and rec.rawData.startswith("links: "):
+                    res = re.findall(isItIpv6,rec.rawData)
+                    if len(res) == 2:
+                        child = int(res[0].split(":")[-1],16)
+                        parent = int(res[1].split(":")[-1],16)
+                        if not child in parents:
+                            parents[child] = {}
+                        if not parent in parents:
+                            parents[parent] = None
+                        parents[child] = parent
+            data = []
+            for node in range(2,(self.metric.run.maxNodes)): #Starting from 2nd node
+                hops = 0
+                while(parents[node] != None):
+                    node = parents[node]
+                    hops += 1
+                    if hops > 50:
+                        continue
+                data.append(hops)
+            retorno.append(statistics.mean(data))
+        return statistics.mean(retorno)
+
 
     def printParentSwitches(self):
         data = {}
