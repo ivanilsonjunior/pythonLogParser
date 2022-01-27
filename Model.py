@@ -576,12 +576,15 @@ class RPL(Base):
             data = []
             for node in range(2,(self.metric.run.maxNodes)): #Starting from 2nd node
                 hops = 0
-                while(parents[node] != None):
-                    node = parents[node]
-                    hops += 1
-                    if hops > 50:
-                        continue
-                data.append(hops)
+                try: 
+                    while(parents[node] != None):
+                        node = parents[node]
+                        hops += 1
+                        if hops > 50:
+                            continue
+                    data.append(hops)
+                except:
+                    continue
             retorno.append(statistics.mean(data))
         return statistics.mean(retorno)
 
