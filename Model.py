@@ -164,7 +164,7 @@ class Experiment(Base):
             for sf in sfLen:
                 if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
                     #Put Here your metrics
-                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append({"avgHops":r.metric.rpl.getAverangeHops()})
+                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(self.metric.getSummary())
         dados = []
         init = 0
         for e in dataset.keys():
@@ -448,7 +448,10 @@ class Metrics(Base):
         retorno = {}
         retorno['app-latency'] = self.application.latency.latencyMean()
         retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
+        retorno['app-genPkg'] = len(self.application.records)
         retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
+        retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=3600000000)
+        retorno['rpl-avgHopsSliced'] = self.rpl.getAverangeHops()
         retransmissions = self.mac.getRetransmissions()
         retorno['mac-retransmissions'] = retransmissions['retransmissions']
         retorno['mac-retransRate'] = retransmissions['retransRate']
@@ -462,6 +465,8 @@ class Metrics(Base):
         retorno['mac-queueglobal-occupation'] = globalQueue['occupation']
         retorno['mac-queueglobal-variance'] = globalQueue['variance']
         retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
+        retorno['energy-RDC'] = self.energy.getRadioDutyCicle()
+        retorno['energy-ChannelOccupation'] = self.energy.getChannelUtilization()
         return retorno
 
 
