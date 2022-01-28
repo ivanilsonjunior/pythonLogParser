@@ -164,7 +164,7 @@ class Experiment(Base):
             for sf in sfLen:
                 if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
                     #Put Here your metrics
-                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(self.metric.getSummary())
+                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
         dados = []
         init = 0
         for e in dataset.keys():
