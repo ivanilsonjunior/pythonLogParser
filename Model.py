@@ -561,7 +561,7 @@ class RPL(Base):
         parents = {}
         time = slice
         anterior = 0
-        endtime = 3600000000
+        endtime = 3600000001
         retorno = []
         while time < endtime:
             records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="RPL").filter(Record.rawData.ilike('links:%')).filter(Record.simTime > anterior).filter(Record.simTime < time).all()
@@ -590,7 +590,10 @@ class RPL(Base):
                     data.append(hops)
                 except:
                     continue
-            retorno.append(statistics.mean(data))
+            try:
+                retorno.append(statistics.mean(data))
+            except statistics.StatisticsError:
+                retorno.append(0)
         return statistics.mean(retorno)
 
 
