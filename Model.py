@@ -452,6 +452,15 @@ class Metrics(Base):
         retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
         retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=3600000000)
         retorno['rpl-avgHopsSliced'] = self.rpl.getAverangeHops()
+        rplMessages = ['total','multicast-DIO','unicast-DIO','DIS','DAO','DAO-ACK']
+        for typ in rplMessages:
+            rplType = self.rpl.getControlMessages()
+            chave = str('rpl-msg-'+ typ)
+            retorno.setdefault(chave,0)
+            try:
+                retorno[chave] = rplType[typ]
+            except KeyError:
+                retorno[chave] = 0
         retransmissions = self.mac.getRetransmissions()
         retorno['mac-retransmissions'] = retransmissions['retransmissions']
         retorno['mac-retransRate'] = retransmissions['retransRate']
