@@ -551,6 +551,18 @@ class RPL(Base):
             retorno += len(psw[i])
         return retorno
 
+    def getControlMessages(self) -> dict:
+        '''
+        Return the total amount of RPL messages and the sum of each message type
+        '''
+        records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="RPL").filter(Record.rawData.ilike('sending a %')).all()
+        retorno = {'total':len(records)}
+        for r in records:
+            msgType = r.rawData.split(' ')[2]
+            retorno.setdefault(msgType, 0)
+            retorno[msgType] += 1
+        return retorno
+
     def getAverangeHops(self, slice = 300000000) -> float:
         '''
         Return the averange RPL hops at end method extracted and adapted from: https://github.com/contiki-ng/contiki-ng/blob/develop/examples/benchmarks/rpl-req-resp/parse.py
