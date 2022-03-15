@@ -617,6 +617,45 @@ class RPL(Base):
                 retorno.append(0)
         return statistics.mean(retorno)
 
+    def getMetrics(self):
+        '''
+        Returns the RPL metrics (Trickle Timer and Rank)
+        '''
+        retorno = []
+        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "RPL")
+        for rec in data:
+            res = re.compile('.*?state: (\w*),.*? rank (\d*).*?dioint (\d*).*?nbr count (\d*)').match(rec.rawData)
+            if (res):
+                rank = int(res.group(2))
+                trickle = (2**int(res.group(3)))/(60*1000.)
+                nbrCount = int(res.group(4))
+                retorno.append({'node': rec.node, 'rank': rank, 'trickle': trickle, "state":res.group(1)})
+        return retorno
+
+    def printMetrics(self):
+        '''
+        Returns the boxplot of the metrics data
+        '''
+        import io
+        import base64
+        import matplotlib.pyplot as plt
+        c = 0
+        fig, axes = plt.subplots(figsize=(10,5),ncols=2)
+        df = pd.DataFrame(self.getMetrics())
+        fig.tight_layout(pad=1.5)
+
+        for i in ['trickle','rank']:
+        #dfg = df.groupby('state').sum().plot(kind='box')
+        #df.describe()
+        #ax = plt.subplot(4, 2)
+            ax = df[i].plot(kind='box', rot = 90, fontsize= '8', grid = True, title=self.metric.run.experiment.name + " - " + i, ax=axes[c])
+            ax.set_ylim(ymin=0)
+            if i == 'trickle':
+                ax.set_ylabel("Seconds")
+            c += 1
+        tempBuffer = io.BytesIO()
+        plt.savefig(tempBuffer, format = 'png')
+        return base64.b64encode(tempBuffer.getvalue()).decode()
 
     def printParentSwitches(self):
         data = {}
