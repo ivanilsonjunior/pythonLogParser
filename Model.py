@@ -393,7 +393,6 @@ class Record(Base):
         self.rawData = data
         self.run = run
 
-
 class Node(Base):
     '''
     TODO: Represents a note (Position and Metrics)
@@ -404,7 +403,6 @@ class Node(Base):
     posX = Column(Integer, nullable=False)
     posY = Column(Integer, nullable=False)
     posZ = Column(Integer, nullable=False)
-
 
 class Metrics(Base):
     '''
@@ -477,7 +475,6 @@ class Metrics(Base):
         retorno['energy-RDC'] = self.energy.getRadioDutyCicle()
         retorno['energy-ChannelOccupation'] = self.energy.getChannelUtilization()
         return retorno
-
 
 class Application(Base):
     __tablename__ = 'application'
@@ -801,7 +798,6 @@ class MACMessage(Base):
     def __str__(self) -> str:
         return "{self.origin}<->{self.dest} Q:{self.enQueued} S({self.isSent}):{self.sentTime} S({self.isReceived}):{self.rcvTime} Sq:{self.seqno}".format(self=self)
 
-
 class MAC(Base):
     '''
     Represents the MAC Layer
@@ -896,6 +892,25 @@ class MAC(Base):
                 results[int(rec.node)].append(tuple((float(rec.simTime)//1000, True)))
                 continue
         return results
+
+    def formationTime(self) -> float():
+        '''
+        Returns the network formation time (ms)
+        In case of never had connected, raises an Exception
+        '''
+        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "TSCH").all()
+        simNodes = self.metric.run.maxNodes - 1
+        connected = 1
+        for rec in data:
+            if rec.rawData.startswith("leaving the network"):
+                connected -= 1
+                continue
+            if rec.rawData.startswith("association done"):
+                connected += 1
+                if simNodes == connected:
+                    return float(rec.simTime)//1000
+        raise Exception("All Nodes have Never Simultaneously Connected")
+
     
     def printIngress(self):
         import matplotlib.pyplot as plt
@@ -932,7 +947,7 @@ class MAC(Base):
 
     def getRetransmissions(self) -> dict():
         '''
-        Return the Experience retransmission metrics
+        Returns the Experience retransmission metrics
 
         :returns: dict()
         '''
@@ -1085,7 +1100,6 @@ class MAC(Base):
             retorno[str('N'+i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
         return retorno
 
-
 class LinkStats(Base):
     '''
     Link Status
@@ -1157,7 +1171,6 @@ class LinkStats(Base):
         plt.gcf().set_size_inches(8,6)
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
-
 
 class PDR(Base):
     __tablename__ = 'pdrs'
@@ -1461,8 +1474,6 @@ class Energy(Base):
             if parsing != None:
                 parsing['time'] = rec.simTime
                 self.results.append(parsing)    
-
-
 
 Experiment.runs = relationship("Run", order_by = Run.id, back_populates="experiment")
 Run.records = relationship("Record", order_by = Record.id, back_populates="run")
