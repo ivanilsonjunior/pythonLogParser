@@ -537,7 +537,7 @@ class RPL(Base):
         results = {}
         for i in range(1,(self.metric.run.maxNodes)):
             results[str(i)] = []
-        records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "parent switch:" in rec.rawData]
+        data = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "parent switch:" in rec.rawData]
         reExp = re.compile('\((.*?)\)')
         for sw in data:
             old = ':'.join(map(str, sw.rawData.split('->')[0].split(":")[1:])).strip()
