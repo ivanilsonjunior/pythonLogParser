@@ -495,7 +495,6 @@ class Application(Base):
 
     def process(self):
         print("Processing App")
-        #data = db.query(Record).filter_by(run = run).filter_by(recordType = "App").all()
         data = self.metric.run.records
         for rec in data:
             if rec.rawData.startswith("app generate"):
@@ -619,7 +618,7 @@ class RPL(Base):
         Returns the RPL metrics (Trickle Timer and Rank)
         '''
         retorno = []
-        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "RPL")
+        data = [rec for rec in self.metric.run.records if rec.recordType == "RPL"]
         for rec in data:
             res = re.compile('.*?state: (\w*),.*? rank (\d*).*?dioint (\d*).*?nbr count (\d*)').match(rec.rawData)
             if (res):
@@ -820,7 +819,7 @@ class MAC(Base):
         results['65535'] = []
 
         if self.metric.run.parameters['MAKE_MAC'].split('_')[-1] == "TSCH":
-            data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "TSCH").all()
+            data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
             for rec in data:
                 if rec.rawData.startswith("send packet to"):
                     origin = int(rec.node)
@@ -878,11 +877,11 @@ class MAC(Base):
                             else:
                                 None
         else:
-            data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "CSMA").all()
+            data = [rec for rec in self.metric.run.records if rec.recordType == "CSMA"]
         self.results =  results
         
     def processIngress(self):
-        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "TSCH").all()
+        data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
         results = [[] for x in range(self.metric.run.maxNodes)]
         for rec in data:
             if rec.rawData.startswith("leaving the network"):
@@ -898,7 +897,7 @@ class MAC(Base):
         Returns the network formation time (ms)
         In case of never had connected, raises an Exception
         '''
-        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "TSCH").all()
+        data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
         simNodes = self.metric.run.maxNodes - 1
         connected = 1
         for rec in data:
@@ -1118,7 +1117,7 @@ class LinkStats(Base):
         nodesStats = {}
         for n in range(self.metric.run.maxNodes):
             nodesStats[n] = {"tx": 0, "ack":0}
-        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "Link Stats").all()
+        data = [rec for rec in self.metric.run.records if rec.recordType == "Link Stats"]
         for rec in data:
             tx = int(rec.rawData.split()[2].split("=")[1])
             ack = int(rec.rawData.split()[3].split("=")[1])
@@ -1467,7 +1466,7 @@ class Energy(Base):
 
     #@orm.reconstructor
     def processEnergy(self):
-        records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="Energest").all()
+        records = [rec for rec in self.metric.run.records if rec.recordType == "Energest"]
         for rec in records:
             #if rec.recordType == "Energest": # No need because
             parsing = self.parseEnergest(rec.rawData)
