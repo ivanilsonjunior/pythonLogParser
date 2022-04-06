@@ -537,7 +537,7 @@ class RPL(Base):
         results = {}
         for i in range(1,(self.metric.run.maxNodes)):
             results[str(i)] = []
-        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "RPL").filter(Record.rawData.contains("Parent switch:")).all()
+        records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "parent switch:" in rec.rawData]
         reExp = re.compile('\((.*?)\)')
         for sw in data:
             old = ':'.join(map(str, sw.rawData.split('->')[0].split(":")[1:])).strip()
@@ -560,7 +560,7 @@ class RPL(Base):
         '''
         Return the total amount of RPL messages and the sum of each message type
         '''
-        records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="RPL").filter(Record.rawData.ilike('sending a %')).all()
+        records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "sending a " in rec.rawData]
         retorno = {'total':len(records)}
         for r in records:
             msgType = r.rawData.split(' ')[2]
@@ -581,7 +581,7 @@ class RPL(Base):
         endtime = 3600000001
         retorno = []
         while time < endtime:
-            records = db.query(Record).filter_by(run=self.metric.run).filter_by(recordType="RPL").filter(Record.rawData.ilike('links:%')).filter(Record.simTime > anterior).filter(Record.simTime < time).all()
+            records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "links" in rec.rawData and rec.simTime > anterior and rec.simTime < time]
             anterior = time
             time += slice
             for rec in records:
