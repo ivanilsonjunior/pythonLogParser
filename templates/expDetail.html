@@ -64,7 +64,7 @@
           {% for run in exp.runs %}
           <ul id="myUL">
             <li><span class="caret">{{ run.experiment.experimentFile }}: Run(<a href="/run/{{run.id}}"> {{ run.id }} </a>)</span>
-              <ul class="nested">
+              <!--<ul class="nested">
                 <li>SlotFrame Size: {{ run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] }}</li>
                 <li>Send Interval: {{ run.parameters['APP_SEND_INTERVAL_SEC'] }}</li>
                 <li><span class="caret">Metrics:</span>
@@ -76,6 +76,7 @@
                     <li>TSCH Retransmissions: {{run.metric.mac.getRetransmissions()}}</li>
                     <li>Link Level PDR: {{run.metric.linkstats.getPDR()}}</li>
                 </li>
+                -->
               </ul>
             </li>
           </ul>
