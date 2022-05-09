@@ -60,10 +60,11 @@
           <form method="get" action="/experiment/run/{{exp.id}}">
             <button type="submit">New Run</button>
         </form>
-       <!--<ul id="myUL">
-          % for run in exp.runs %}
+       <ul id="myUL">
+          {% for run in exp.runs %}
           <ul id="myUL">
-            <li><span class="caret"> run.experiment.experimentFile }}: Run(<a href="/run/run.id}}">  run.id }} </a>)</span>
+            <li><span class="caret"> {{run.experiment.experimentFile }}: Run(<a href="/run/{{run.id}}">  {{run.id }} </a>)</span>
+            <!--
               <ul class="nested">
                 <li>SlotFrame Size:  run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] }}</li>
                 <li>Send Interval:  run.parameters['APP_SEND_INTERVAL_SEC'] }}</li>
@@ -77,11 +78,11 @@
                     <li>Link Level PDR: run.metric.linkstats.getPDR()}}</li>
                 </li>
                 
-              </ul>
+              </ul>-->
             </li>
           </ul>
         </ul>
-          % endfor %}-->
+          <!--% endfor %}-->
       </div>
     </div>
     <script>
