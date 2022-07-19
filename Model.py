@@ -279,6 +279,8 @@ class Run(Base):
                 fields = line.split()
                 logTime = fields[0]
                 logNode = int(fields[1])
+                if (fields[2].startswith("Assertion")):
+                    continue
                 logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
                 logLevel = logDesc[0].strip()
                 logType = logDesc[1].strip()
