@@ -58,14 +58,14 @@ def getProgress():
     with open("COOJA.log", "r") as f:
             for line in f.readlines():
                 data = line.split(']')[3]
-                if data.startswith(' - Test script activated'):
+                if data.startswith(' - Script timeout in'):
                     isRun = True
                 if data.startswith(" - Test script"):
                     if data.startswith(" - Test script at"):
                         exp = re.compile(' - Test script at (\d+.\d+|\d+)%, done in (\d+.\d+|\d+) sec').match(data)
                         progress = int(float(exp.group(1)))
                         toEnd = exp.group(2)
-                if data.startswith(' - Test script finished'):
+                if data.startswith(' - TEST OK'):
                     isRun = False
                     toEnd = 0
                     progress = 100
