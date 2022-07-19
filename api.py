@@ -57,7 +57,10 @@ def getProgress():
     toEnd = 999999999
     with open("COOJA.log", "r") as f:
             for line in f.readlines():
-                data = line.split(']')[3]
+                try:
+                    data = line.split(']')[3]
+                except IndexError:
+                    continue
                 if data.startswith(' - Script timeout in'):
                     isRun = True
                 if data.startswith(" - Test script"):
