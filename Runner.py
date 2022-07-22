@@ -86,17 +86,17 @@ class Runner:
     def run(self):
         if not os.access(self.cooja_jar, os.R_OK):
             print('The file "{}" does not exist, did you build Cooja?'.format(self.cooja_jar))
-            exit(-1)
+            return (-1)
 
         input_file = self.cooja_input
 
         if not os.access(input_file, os.R_OK):
             print('Simulation script "{}" does not exist'.format(input_file))
-            exit(-1)
+            return (-1)
 
         print('Using simulation script "{}"'.format(input_file))
         if not self.execute_test(input_file):
-            exit(-1)
+            return (-1)
 
 #######################################################
 
