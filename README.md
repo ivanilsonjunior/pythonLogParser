@@ -22,6 +22,31 @@ TODO: Split apart the data from the presentation
 
 ## Install and Run
 
+### Ubuntu 20.04 server and default-jdk (done at 20220729)
+1. Inside the [Contiki-NG](https://github.com/contiki-ng/contiki-ng) examples folder clone this repository
+   1. The JAVA_HOME variable must be setted
+2. After the clonning part execute '''python3 -m pip install -r requirements.txt'''
+3. Inside the created folder execute the API 'python3 api.py'
+   - At the first run a SQLite DB Metrics.db will be created
+   - You should access the page via browser (http://localhost:9001) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
+   - Inside the experiment page click on new Run
+   - After the done you can extract the metrics from run
+ 4. I made a installation over a fresh installed Debian 10 and it worked fine.
+   ```
+   mkdir deploy
+   cd deploy/
+   git clone https://github.com/contiki-ng/contiki-ng.git
+   sudo apt install build-essential doxygen git curl wireshark python3-serial srecord rlwrap default-jre ant openjdk-11-jdk python3-pip
+   export JAVA_HOME=/usr/lib/jvm/default-java
+   cd contiki-ng/
+   git submodule update --init --recursive
+   cd examples/
+   git clone https://github.com/ivanilsonjunior/pythonLogParser.git
+   cd pythonLogParser/
+   . runMe.sh
+   ``` 
+   after, just run 'python3 api.py'
+  
 ### Debian 10 and default-jdk
 
 1. Inside the [Contiki-NG](https://github.com/contiki-ng/contiki-ng) examples folder clone this repository
@@ -32,12 +57,12 @@ TODO: Split apart the data from the presentation
    - You should access the page via browser (http://localhost:9001) and add an experiment (Click on 'Add Experiment' link and put any name and the Simulation file puts Sim.csc)
    - Inside the experiment page click on new Run
    - After the done you can extract the metrics from run
- 4. I made a installation over a fresh installed Debian 10 and worked fine.
+ 4. I made a installation over a fresh installed Debian 10 and it worked fine.
    ```
    mkdir deploy
    cd deploy/
    git clone https://github.com/contiki-ng/contiki-ng.git
-   sudo apt install build-essential doxygen git curl wireshark python-serial srecord rlwrap default-jre ant openjdk-11-jdk python3-pip
+   sudo apt install build-essential doxygen git curl wireshark python3-serial srecord rlwrap default-jre ant openjdk-11-jdk python3-pip
    export JAVA_HOME=/usr/lib/jvm/default-java
    cd contiki-ng/
    git submodule update --init --recursive
