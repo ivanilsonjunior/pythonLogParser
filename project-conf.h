@@ -41,13 +41,17 @@
 /* Enable printing of packet counters */
 #define LINK_STATS_CONF_PACKET_COUNTERS          1
 
+
+/* IEEE802.15.4 PANID */
+#define IEEE802154_CONF_PANID 0x0DE1
+
 /* Application settings */
 #define APP_SEND_INTERVAL_SEC 5
 #define APP_WARM_UP_PERIOD_SEC 120
 #define RPL_CONF_OF_OCP RPL_OCP_OF0 /* tells to use OF0 for DAGs rooted at this node */
 #define RPL_CONF_SUPPORTED_OFS {&rpl_of0, &rpl_mrhof} /* tells to compile in support for both OF0 and MRHOF */
 /* TSCH SLOT FRAME*/
-#define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 7
+#define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 5
 
 #define SICSLOWPAN_CONF_FRAG 1 /* No fragmentation */
 #define UIP_CONF_BUFFER_SIZE 200
