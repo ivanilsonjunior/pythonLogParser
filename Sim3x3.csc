@@ -2,7 +2,6 @@
 <simconf>
   <project EXPORT="discard">[APPS_DIR]/mrm</project>
   <project EXPORT="discard">[APPS_DIR]/mspsim</project>
-  <project EXPORT="discard">[APPS_DIR]/avrora</project>
   <project EXPORT="discard">[APPS_DIR]/serial_socket</project>
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
@@ -311,7 +310,7 @@
     <plugin_config>
       <script>/* A simple log file generator script */
 
-TIMEOUT(3600000); /* 3600 seconds or 1 hour */
+TIMEOUT(600000); /* 3600 seconds or 1 hour */
 
 log.log("Starting COOJA logger\n");
 
