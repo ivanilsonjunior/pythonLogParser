@@ -154,6 +154,7 @@ class Experiment(Base):
         sfLen = ['5','7','11']
         sendInterval = ['600','1','2','3','4','5']
         dataset = {}
+        dados = []
         for r in self.runs:
             dataset[self.experimentFile] = {}
             for sf in sfLen:
@@ -165,8 +166,6 @@ class Experiment(Base):
                 if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
                     #Put Here your metrics
                     dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
-        dados = []
-        init = 0
         for e in dataset.keys():
             for sfleng in dataset[e].keys():
                 for sentInt in dataset[e][sfleng].keys():
@@ -177,7 +176,19 @@ class Experiment(Base):
                     data.update(json.loads(df.mean().to_json()))
                     dados.append(data)
         df = pd.json_normalize(dados) 
-        df.to_csv(filename)       
+        df.to_csv(filename)
+        dados = []
+        for e in dataset.keys():
+            for sfleng in dataset[e].keys():
+                for sentInt in dataset[e][sfleng].keys():
+                    df = pd.DataFrame(dataset[e][sfleng][sentInt])
+                    data = {}
+                    data['SlotFrame Length'] = sfleng
+                    data['Sent Interval'] = sentInt
+                    data.update(json.loads(df.std().to_json()))
+                    dados.append(data)
+        df = pd.json_normalize(dados)         
+        df.to_csv("STD"+filename)      
 
 class Run(Base):
     '''
