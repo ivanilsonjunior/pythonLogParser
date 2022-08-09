@@ -52,6 +52,7 @@
 #define RPL_CONF_SUPPORTED_OFS {&rpl_of0, &rpl_mrhof} /* tells to compile in support for both OF0 and MRHOF */
 /* TSCH SLOT FRAME*/
 #define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 5
+#define TSCH_CONF_MAC_MAX_FRAME_RETRIES 3
 
 #define SICSLOWPAN_CONF_FRAG 1 /* No fragmentation */
 #define UIP_CONF_BUFFER_SIZE 200
