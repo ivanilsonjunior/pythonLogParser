@@ -152,7 +152,7 @@ class Experiment(Base):
         '''
         self = self
         sfLen = ['5','7','11']
-        sendInterval = ['600','1','2','3','4','5']
+        sendInterval = ['1200','1','2','3','4','5']
         dataset = {}
         dados = []
         for r in self.runs:
@@ -923,6 +923,7 @@ class MAC(Base):
                 connected += 1
                 if simNodes == connected:
                     return float(rec.simTime)//1000
+        return 1200
         raise Exception("All Nodes have Never Simultaneously Connected")
 
     

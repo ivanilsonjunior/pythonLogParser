@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <simconf>
   <simulation>
     <title>RPL+TSCH</title>
-    <randomseed>123456</randomseed>
+    <randomseed>43026</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
@@ -219,9 +218,9 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter />
-      <formatted_time />
-      <coloring />
+      <filter/>
+      <formatted_time/>
+      <coloring/>
     </plugin_config>
     <width>1031</width>
     <z>2</z>
@@ -241,9 +240,9 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
       <mote>6</mote>
       <mote>7</mote>
       <mote>8</mote>
-      <showRadioRXTX />
-      <showRadioChannels />
-      <showRadioHW />
+      <showRadioRXTX/>
+      <showRadioChannels/>
+      <showRadioHW/>
       <zoomfactor>16529.88882215865</zoomfactor>
     </plugin_config>
     <width>1304</width>
@@ -290,4 +289,3 @@ while (true) {
     <location_y>206</location_y>
   </plugin>
 </simconf>
-
