@@ -6,8 +6,8 @@
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
-      <transmitting_range>35.0</transmitting_range>
-      <interference_range>50.0</interference_range>
+      <transmitting_range>25.0</transmitting_range>
+      <interference_range>30.0</interference_range>
       <success_ratio_tx>1.0</success_ratio_tx>
       <success_ratio_rx>1.0</success_ratio_rx>
     </radiomedium>
@@ -38,7 +38,7 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Mote2MoteRelations</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.MoteAttributes</moteinterface>
     </motetype>
-    <mote>
+       <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
         <x>0.0</x>
@@ -53,13 +53,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
       <motetype_identifier>mtype495131881</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
         <x>0.0</x>
-        <y>25.0</y>
+        <y>20.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -70,13 +71,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
         <x>0.0</x>
-        <y>50.0</y>
+        <y>40.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -87,13 +89,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
         <x>0.0</x>
-        <y>75.0</y>
+        <y>60.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -104,12 +107,13 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>25.0</x>
+        <x>20.0</x>
         <y>0.0</y>
         <z>0.0</z>
       </interface_config>
@@ -121,13 +125,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>25.0</x>
-        <y>25.0</y>
+        <x>20.0</x>
+        <y>20.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -138,13 +143,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>25.0</x>
-        <y>50.0</y>
+        <x>20.0</x>
+        <y>40.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -155,13 +161,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>25.0</x>
-        <y>75.0</y>
+        <x>20.0</x>
+        <y>60.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -172,12 +179,13 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>50.0</x>
+        <x>40.0</x>
         <y>0.0</y>
         <z>0.0</z>
       </interface_config>
@@ -189,13 +197,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>50.0</x>
-        <y>25.0</y>
+        <x>40.0</x>
+        <y>20.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -206,13 +215,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>50.0</x>
-        <y>50.0</y>
+        <x>40.0</x>
+        <y>40.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -223,13 +233,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>50.0</x>
-        <y>75.0</y>
+        <x>40.0</x>
+        <y>60.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -240,12 +251,13 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>75.0</x>
+        <x>60.0</x>
         <y>0.0</y>
         <z>0.0</z>
       </interface_config>
@@ -257,13 +269,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>75.0</x>
-        <y>25.0</y>
+        <x>60.0</x>
+        <y>20.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -274,13 +287,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>75.0</x>
-        <y>50.0</y>
+        <x>60.0</x>
+        <y>40.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -291,13 +305,14 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>75.0</x>
-        <y>75.0</y>
+        <x>60.0</x>
+        <y>60.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -308,7 +323,8 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
         org.contikios.cooja.contikimote.interfaces.ContikiRadio
         <bitrate>250.0</bitrate>
       </interface_config>
-      <motetype_identifier>mtype495131881</motetype_identifier>
+      <interface_config>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</interface_config>
+      <motetype_identifier>mtype164028083</motetype_identifier>
     </mote>
   </simulation>
   <plugin>
@@ -383,7 +399,7 @@ make -j$(CPUS) TARGET=cooja node.cooja</commands>
     <plugin_config>
       <script>/* A simple log file generator script */
 
-TIMEOUT(600000); /* 3600 seconds or 1 hour */
+TIMEOUT(1200000); /* 1200 seconds or 20 min: */
 
 log.log("Starting COOJA logger\n");
 
