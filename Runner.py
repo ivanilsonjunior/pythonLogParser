@@ -13,7 +13,9 @@ class Runner:
         # move three levels up
         self.CONTIKI_PATH = os.path.dirname(os.path.dirname(self.SELF_PATH))
 
-        self.cooja_jar = os.path.normpath(os.path.join(self.CONTIKI_PATH, "tools", "cooja", "dist", "cooja.jar"))
+        self.COOJA_PATH = os.path.normpath(os.path.join(self.CONTIKI_PATH, "tools", "cooja"))
+
+        self.cooja_jar = os.path.normpath(os.path.join(self.CONTIKI_PATH, "tools", "cooja", "build", "libs", "cooja-full.jar"))
         self.cooja_input = simFile
         self.cooja_output = "COOJA.testlog"
 
@@ -22,13 +24,13 @@ class Runner:
 
     def run_subprocess(self, args, input_string):
         retcode = -1
-        stdoutdata = ''
+        stdoutdata = '\n'
         try:
             proc = Popen(args, stdout = PIPE, stderr = STDOUT, stdin = PIPE, shell = True)
             #proc = Popen(args, stdout = self.cooja_output, stderr = STDOUT, stdin = PIPE, shell = True)
             (stdoutdata, stderrdata) = proc.communicate(input_string)
             if not stdoutdata:
-                stdoutdata = ''
+                stdoutdata = '\n'
             if stderrdata:
                 stdoutdata += stderrdata
             retcode = proc.returncode
@@ -53,7 +55,7 @@ class Runner:
             pass
 
         filename = os.path.join(self.SELF_PATH, cooja_file)
-        args = " ".join(["java -Djava.awt.headless=true -jar ", self.cooja_jar, "-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH])
+        args = " ".join([self.COOJA_PATH + "/gradlew --no-watch-fs --parallel --build-cache -p", self.COOJA_PATH, "run --args='-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH, "-logdir=" + self.SELF_PATH, "-logname=COOJA.log" + "'"])
         sys.stdout.write("  Running Cooja, args={}\n".format(args))
 
         (retcode, output) = self.run_subprocess(args, '')
