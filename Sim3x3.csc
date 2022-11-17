@@ -3,7 +3,6 @@
   <project EXPORT="discard">[APPS_DIR]/mrm</project>
   <project EXPORT="discard">[APPS_DIR]/mspsim</project>
   <project EXPORT="discard">[APPS_DIR]/serial_socket</project>
-  <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>parsing</title>
     <randomseed>123457</randomseed>
@@ -333,14 +332,6 @@ while (true) {
     <height>527</height>
     <location_x>938</location_x>
     <location_y>171</location_y>
-  </plugin>
-  <plugin>
-    PowerTracker
-    <width>692</width>
-    <z>3</z>
-    <height>516</height>
-    <location_x>727</location_x>
-    <location_y>206</location_y>
   </plugin>
 </simconf>
 

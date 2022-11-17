@@ -58,20 +58,20 @@ def getProgress():
     with open("COOJA.log", "r") as f:
             for line in f.readlines():
                 try:
-                    data = line.split(']')[3]
+                    data = line.split('-')[2].strip()
                 except IndexError:
                     continue
-                if data.startswith(' - Script timeout in'):
+                if data.startswith('Script timeout in'):
                     isRun = True
-                if data.startswith(" - Test script"):
-                    if data.startswith(" - Test script at"):
-                        exp = re.compile(' - Test script at (\d+.\d+|\d+)%, done in (\d+.\d+|\d+) sec').match(data)
+                if data.find('completed') != -1:
+                        exp = re.compile('(\d+.\d+|\d+)% completed, (\d+.\d+|\d+) sec remaining').match(data)
                         progress = int(float(exp.group(1)))
                         toEnd = exp.group(2)
-                if data.startswith(' - TEST OK'):
-                    isRun = False
+                if data.startswith('Timeout'):
                     toEnd = 0
                     progress = 100
+                if data.startswith('TEST OK'):
+                    isRun = False
     log = len(open('COOJA.testlog').readlines())
     status = {'run': isRun, 'progress': progress, 'doneIn': toEnd, 'logFile': log}
     return jsonify(status)

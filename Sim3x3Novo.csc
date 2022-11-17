@@ -281,13 +281,5 @@ while (true) {
     <location_x>938</location_x>
     <location_y>171</location_y>
   </plugin>
-  <plugin>
-    PowerTracker
-    <width>692</width>
-    <z>3</z>
-    <height>516</height>
-    <location_x>727</location_x>
-    <location_y>206</location_y>
-  </plugin>
 </simconf>
 
