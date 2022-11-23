@@ -54,7 +54,7 @@ class Runner:
         except:
             pass
 
-        filename = os.path.join(self.SELF_PATH, cooja_file)-logname=COOJA.log
+        filename = os.path.join(self.SELF_PATH, cooja_file)
         args = " ".join([self.COOJA_PATH + "/gradlew --no-watch-fs --parallel --build-cache -p", self.COOJA_PATH, "run --args='-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH, "-logdir=" + self.SELF_PATH, "-logname=COOJA.log" + "'"])
         sys.stdout.write("  Running Cooja, args={}\n".format(args))
 
