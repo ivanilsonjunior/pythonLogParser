@@ -7,15 +7,15 @@ from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 Based on run-cooja.py
 '''
 class Runner:
-    def __init__(self, simFile):    
+    def __init__(self, simFile, useJar=False):    
         # get the path of this example
+        self.useJar = useJar
         self.SELF_PATH = os.getcwd()
         # move three levels up
         self.CONTIKI_PATH = os.path.dirname(os.path.dirname(self.SELF_PATH))
-
         self.COOJA_PATH = os.path.normpath(os.path.join(self.CONTIKI_PATH, "tools", "cooja"))
-
-        self.cooja_jar = os.path.normpath(os.path.join(self.CONTIKI_PATH, "tools", "cooja", "build", "libs", "cooja-full.jar"))
+        if self.useJar:
+            self.cooja_jar = os.path.normpath(os.path.join(self.CONTIKI_PATH, "tools", "cooja", "build", "libs", "cooja-full.jar"))
         self.cooja_input = simFile
         self.cooja_output = "COOJA.testlog"
 
@@ -53,9 +53,11 @@ class Runner:
             os.rm(self.cooja_output)
         except:
             pass
-
         filename = os.path.join(self.SELF_PATH, cooja_file)
-        args = " ".join([self.COOJA_PATH + "/gradlew --no-watch-fs --parallel --build-cache -p", self.COOJA_PATH, "run --args='-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH, "-logdir=" + self.SELF_PATH, "-logname=COOJA.log" + "'"])
+        if self.useJar:
+            args = " ".join(["java -Djava.awt.headless=true -jar ", self.cooja_jar, "-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH, "--logname=COOJA.log"])
+        else:
+            args = " ".join([self.COOJA_PATH + "/gradlew run --no-watch-fs --parallel --build-cache -p", self.COOJA_PATH, "--args='-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH, "-logdir=" + self.SELF_PATH, "--logname=COOJA.log" + "'"])
         sys.stdout.write("  Running Cooja, args={}\n".format(args))
 
         (retcode, output) = self.run_subprocess(args, '')
@@ -86,9 +88,10 @@ class Runner:
     # Run the application
 
     def run(self):
-        #if not os.access(self.cooja_jar, os.R_OK):
-        #    print('The file "{}" does not exist, did you build Cooja?'.format(self.cooja_jar))
-        #    return (-1)
+        if self.useJar:
+            if not os.access(self.cooja_jar, os.R_OK):
+                print('The file "{}" does not exist, trying to build cooja-full.jar !'.format(self.cooja_jar))
+                proc = Popen(self.COOJA_PATH + "/gradlew fulljar", shell=True)
 
         input_file = self.cooja_input
 
