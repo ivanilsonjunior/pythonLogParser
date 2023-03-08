@@ -12,8 +12,8 @@ MAKE_ROUTING = MAKE_ROUTING_RPL_LITE
 
 # Energy usage estimation
 MODULES += os/services/simple-energest
-#MODULES += $(CONTIKI_NG_SERVICES_DIR)/orchestra
-#ORCHESTRA_EXTRA_RULES = &unicast_per_neighbor_link_based
+MODULES += os/services/orchestra
+ORCHESTRA_EXTRA_RULES = &unicast_per_neighbor_rpl_ns
 
 include $(CONTIKI)/Makefile.dir-variables
 include $(CONTIKI)/Makefile.include
