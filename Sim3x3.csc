@@ -309,7 +309,7 @@
     <plugin_config>
       <script>/* A simple log file generator script */
 
-TIMEOUT(600000); /* 3600 seconds or 1 hour */
+TIMEOUT(1810000); /* 3600 seconds or 1 hour */
 
 log.log("Starting COOJA logger\n");
 
