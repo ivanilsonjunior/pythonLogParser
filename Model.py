@@ -22,6 +22,7 @@ matplotlib.use('Agg')
 import threading
 import itertools
 import pandas as pd
+#import gc
 
 from sqlalchemy.sql.elements import TextClause
 from Runner import Runner
@@ -111,7 +112,9 @@ class Experiment(Base):
             shutil.copy(self.experimentFile, "temp")
             shutil.copy("Makefile","temp")
             # TODO: I Should get the mote.c file via .csc file
-            shutil.copy("node.c","temp")
+            shutil.copy("node-rt.c","temp")
+            shutil.copy("sf-simple.c","temp")
+            shutil.copy("sf-simple.h","temp")
             self.confFile.save("temp/project-conf.h")
             #Adjsting the Makefile for the Contiki's right place
             with open('temp/Makefile','r') as file:
@@ -120,31 +123,33 @@ class Experiment(Base):
             with open('temp/Makefile','w') as file:
                 file.write(filedata)
             for run in range(repetitions):
-                import lxml.etree
-                import random
-                simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
-                rand = simFile.xpath("//randomseed")[0]
-                rand.text = str(random.randint(0,65535))
-                open(str("temp/" + self.experimentFile), 'w').write(lxml.etree.tounicode(simFile))
-                runner = Runner(str("temp/" + self.experimentFile))
-                newRun = Run()
-                newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
-                newRun.experiment = self
-                newRun.start = datetime.now()
-                try:
-                    runner.run()
-                    newRun.end = datetime.now()
-                    newRun.processRun()
-                    newRun.parameters = newRun.getBulkParameters()
-                    self.runs.append(newRun)
-                    newRun.metric = Metrics(newRun)
-                    db.add(newRun)
-                    db.commit()
-                    newRun.metric.application.process()
-                    #continue
-                except Exception as ex:
-                    print (ex)
-                    return "Error"
+                runOk = False
+                while(not runOk):
+                    print("Run " + str(run) + " of " + str(repetitions) + " values: " + str(i.values()))
+                    import lxml.etree
+                    import random
+                    simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
+                    rand = simFile.xpath("//randomseed")[0]
+                    rand.text = str(random.randint(0,65535))
+                    open(str("temp/" + self.experimentFile), 'w').write(lxml.etree.tounicode(simFile))
+                    runner = Runner(str("temp/" + self.experimentFile))
+                    newRun = Run()
+                    newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
+                    newRun.experiment = self
+                    newRun.start = datetime.now()
+                    retorno = runner.run()
+                    if (retorno == -1):
+                        continue
+                    else:
+                        newRun.end = datetime.now()
+                        newRun.processRun()
+                        newRun.parameters = newRun.getBulkParameters()
+                        self.runs.append(newRun)
+                        newRun.metric = Metrics(newRun)
+                        db.add(newRun)
+                        db.commit()
+                        newRun.metric.application.process()
+                        runOk = True
 
     def toCsv(self, filename):
         '''
@@ -154,7 +159,7 @@ class Experiment(Base):
         sfLen = ['5','7','11']
         sendInterval = ['1200','1','2','3','4','5']
         dataset = {}
-        dados = []
+        dados = []        
         for r in self.runs:
             dataset[self.experimentFile] = {}
             for sf in sfLen:
@@ -163,9 +168,14 @@ class Experiment(Base):
                     dataset[str(self.experimentFile)][sf][s] = []
         for r in self.runs:
             for sf in sfLen:
-                if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
-                    #Put Here your metrics
-                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
+                try:
+                    if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
+                        #Put Here your metrics
+                        print("Run id: "+ str(r.id))
+                        dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
+                        #gc.collect()
+                except Exception:
+                    continue
         for e in dataset.keys():
             for sfleng in dataset[e].keys():
                 for sentInt in dataset[e][sfleng].keys():
@@ -175,6 +185,7 @@ class Experiment(Base):
                     data['Sent Interval'] = sentInt
                     data.update(json.loads(df.mean().to_json()))
                     dados.append(data)
+                    del data
         df = pd.json_normalize(dados) 
         df.to_csv(filename)
         dados = []
@@ -188,7 +199,7 @@ class Experiment(Base):
                     data.update(json.loads(df.std().to_json()))
                     dados.append(data)
         df = pd.json_normalize(dados)         
-        df.to_csv("STD"+filename)      
+        df.to_csv("STD"+filename)        
 
 class Run(Base):
     '''
@@ -197,7 +208,6 @@ class Run(Base):
         Parameters:
             start: Start simulation time
             end: End simulation time
-            maxNodes: Simulation nodes amount
             parameters: Run parameters
             experiment: Experiment base
             metric: Metrics simulation
@@ -289,10 +299,13 @@ class Run(Base):
                     continue
                 fields = line.split()
                 logTime = fields[0]
-                logNode = int(fields[1])
                 if (fields[2].startswith("Assertion")):
                     continue
-                logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
+                logNode = int(fields[1])
+                try:
+                    logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
+                except Exception:
+                    continue
                 logLevel = logDesc[0].strip()
                 logType = logDesc[1].strip()
                 data = line.split("]")[1].strip()
@@ -307,6 +320,16 @@ class Run(Base):
         import subprocess
         proc = subprocess.Popen(['make','viewconf'],bufsize=1, universal_newlines=True, stdout=subprocess.PIPE)
         myDict = {}
+        # Get last line source: https://stackoverflow.com/questions/46258499/how-to-read-the-last-line-of-a-file-in-python
+        with open('COOJA.testlog', 'rb') as f:
+            try:  # catch OSError in case of a one line file 
+                f.seek(-2, os.SEEK_END)
+                while f.read(1) != b'\n':
+                    f.seek(-2, os.SEEK_CUR)
+            except OSError:
+                f.seek(0)
+            last_line = f.readline().decode()
+            myDict['SimTimeout'] = int(last_line.split(':')[1])/1000000
         for param in ['radiomedium','transmitting_range','interference_range','success_ratio_tx','success_ratio_rx']:
             myDict[param] = str(minidom.parse(self.experiment.experimentFile).getElementsByTagName(param)[0].firstChild.data).strip()
         for line in iter(proc.stdout.readline,''):
@@ -457,27 +480,32 @@ class Metrics(Base):
         Here you should return the metrics that you want
         '''
         retorno = {}
+        print ("App", end =" ")
         retorno['app-latency'] = self.application.latency.latencyMean()
         retorno['app-latency-median'] = self.application.latency.latencyMedian()
         retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
         retorno['app-genPkg'] = len(self.application.records)
+        print ("RPL", end =" ")
         retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
         #retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=600000000)
         #retorno['rpl-avgHopsSliced'] = self.rpl.getAverangeHops()
         rplMessages = ['total','multicast-DIO','unicast-DIO','DIS','DAO','DAO-ACK']
+        rplType = self.rpl.getControlMessages()
         for typ in rplMessages:
-            rplType = self.rpl.getControlMessages()
             chave = str('rpl-msg-'+ typ)
             retorno.setdefault(chave,0)
             try:
                 retorno[chave] = rplType[typ]
             except KeyError:
                 retorno[chave] = 0
+        print ("MAC", end =" ")
+        print("Retransmissions", end =" ")
         retransmissions = self.mac.getRetransmissions()
         retorno['mac-retransmissions'] = retransmissions['retransmissions']
         retorno['mac-retransRate'] = retransmissions['retransRate']
+        print("Disconnections", end =" ")
         retorno['mac-disconnections'] = self.mac.getDisconnections()
-        retorno['mac-formation'] = self.mac.formationTime()
+        retorno['mac-formation'] = 0#self.mac.formationTime()
         #nbrQueue = self.mac.getNBRQueueOccupation()
         #retorno['mac-queuenbr-length'] = nbrQueue['length']
         #retorno['mac-queuenbr-occupation'] = nbrQueue['occupation']
@@ -486,9 +514,13 @@ class Metrics(Base):
         #retorno['mac-queueglobal-length'] = globalQueue['length']
         #retorno['mac-queueglobal-occupation'] = globalQueue['occupation']
         #retorno['mac-queueglobal-variance'] = globalQueue['variance']
+        print("PDR", end =" ")
         retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
+        print ("Energy RDC", end =" ")
         retorno['energy-RDC'] = self.energy.getRadioDutyCicle()
+        print ("Energy Channel", end =" ")
         retorno['energy-ChannelOccupation'] = self.energy.getChannelUtilization()
+        print("END")
         return retorno
 
 class Application(Base):
@@ -562,6 +594,7 @@ class RPL(Base):
             if reExp.search(new):
                 new = None            
             results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
+        del data
         return results
 
     def getParentSwitches(self) -> int:
@@ -581,6 +614,7 @@ class RPL(Base):
             msgType = r.rawData.split(' ')[2]
             retorno.setdefault(msgType, 0)
             retorno[msgType] += 1
+        del records
         return retorno
 
     def getAverangeHops(self, slice = 300000000) -> float:
@@ -593,7 +627,7 @@ class RPL(Base):
         parents = {}
         time = slice
         anterior = 0
-        endtime = 3600000001
+        endtime = self.metric.run.getParameters()['SimTimeout'] + 1
         retorno = []
         while time < endtime:
             records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "links" in rec.rawData and rec.simTime > anterior and rec.simTime < time]
@@ -626,6 +660,8 @@ class RPL(Base):
                 retorno.append(statistics.mean(data))
             except statistics.StatisticsError:
                 retorno.append(0)
+            del data
+            del records
         return statistics.mean(retorno)
 
     def getMetrics(self):
@@ -893,10 +929,12 @@ class MAC(Base):
                                 None
         else:
             data = [rec for rec in self.metric.run.records if rec.recordType == "CSMA"]
+        del data
         self.results =  results
         
     def processIngress(self):
-        data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
+        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "TSCH").filter(Record.rawData.contains("leaving the network") | Record.rawData.contains("association done")).all()
+        #data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
         results = [[] for x in range(self.metric.run.maxNodes)]
         for rec in data:
             if rec.rawData.startswith("leaving the network"):
@@ -905,6 +943,7 @@ class MAC(Base):
             if rec.rawData.startswith("association done"):
                 results[int(rec.node)].append(tuple((float(rec.simTime)//1000, True)))
                 continue
+        del data
         return results
 
     def formationTime(self) -> float():
@@ -923,7 +962,7 @@ class MAC(Base):
                 connected += 1
                 if simNodes == connected:
                     return float(rec.simTime)//1000
-        return 1200
+        return null
         raise Exception("All Nodes have Never Simultaneously Connected")
 
     
@@ -943,7 +982,7 @@ class MAC(Base):
                     time = j[0]/1000
                     plt.plot(time, index, marker="^", color="green")
                     x[0] = time
-                    x[1] = (3600) #sim end without node's disconnection
+                    x[1] = self.metric.run.getParameters()['SimTimeout'] #sim end without node's disconnection
                 else:
                     time = j[0]/1000
                     plt.plot(time, index, marker="v", color="red")
@@ -1133,7 +1172,8 @@ class LinkStats(Base):
         nodesStats = {}
         for n in range(self.metric.run.maxNodes):
             nodesStats[n] = {"tx": 0, "ack":0}
-        data = [rec for rec in self.metric.run.records if rec.recordType == "Link Stats"]
+        #data = [rec for rec in self.metric.run.records if rec.recordType == "Link Stats"]
+        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "Link Stats").all()
         for rec in data:
             tx = int(rec.rawData.split()[2].split("=")[1])
             ack = int(rec.rawData.split()[3].split("=")[1])
@@ -1488,7 +1528,8 @@ class Energy(Base):
             parsing = self.parseEnergest(rec.rawData)
             if parsing != None:
                 parsing['time'] = rec.simTime
-                self.results.append(parsing)    
+                self.results.append(parsing)
+        del records
 
 Experiment.runs = relationship("Run", order_by = Run.id, back_populates="experiment")
 Run.records = relationship("Record", order_by = Record.id, back_populates="run")
