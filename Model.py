@@ -355,6 +355,16 @@ class Run(Base):
         import subprocess
         proc = subprocess.Popen(['make','viewconf'],bufsize=1, cwd="temp", universal_newlines=True, stdout=subprocess.PIPE)
         myDict = {}
+        # Get last line source: https://stackoverflow.com/questions/46258499/how-to-read-the-last-line-of-a-file-in-python
+        with open('COOJA.testlog', 'rb') as f:
+            try:  # catch OSError in case of a one line file 
+                f.seek(-2, os.SEEK_END)
+                while f.read(1) != b'\n':
+                    f.seek(-2, os.SEEK_CUR)
+            except OSError:
+                f.seek(0)
+            last_line = f.readline().decode()
+            myDict['SimTimeout'] = int(last_line.split(':')[1])/1000000
         for param in ['randomseed','radiomedium','transmitting_range','interference_range','success_ratio_tx','success_ratio_rx']:
             myDict[param] = str(minidom.parse(self.experiment.experimentFile).getElementsByTagName(param)[0].firstChild.data).strip()
         for line in iter(proc.stdout.readline,''):
@@ -627,7 +637,7 @@ class RPL(Base):
         parents = {}
         time = slice
         anterior = 0
-        endtime = self.metric.run.getParameters()['SimTimeout'] + 1
+        endtime = self.metric.run.parameters['SimTimeout'] + 1
         retorno = []
         while time < endtime:
             records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "links" in rec.rawData and rec.simTime > anterior and rec.simTime < time]
@@ -982,7 +992,7 @@ class MAC(Base):
                     time = j[0]/1000
                     plt.plot(time, index, marker="^", color="green")
                     x[0] = time
-                    x[1] = self.metric.run.getParameters()['SimTimeout'] #sim end without node's disconnection
+                    x[1] = self.metric.run.parameters['SimTimeout'] #sim end without node's disconnection
                 else:
                     time = j[0]/1000
                     plt.plot(time, index, marker="v", color="red")
@@ -991,7 +1001,7 @@ class MAC(Base):
                     x = [0,0]
             plt.plot(x,[index,index])
             index +=1
-        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
+        plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (S)")
         plt.ylabel("Nodes")
         plt.yticks(range(2,self.metric.run.maxNodes))
@@ -1043,7 +1053,7 @@ class MAC(Base):
                     x.append(m.sentTime/1000000)
                     y.append(m.retransmissions())
             plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
-        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
+        plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("# of Retransmissions")
         plt.legend()
@@ -1070,7 +1080,7 @@ class MAC(Base):
                     x.append(m.sentTime/1000000)
                     y.append(m.retransmissions())
             plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
-        plt.axvline(x=int(self.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
+        plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("# of Retransmissions")
         plt.legend()
@@ -1438,7 +1448,7 @@ class Latency(Base):
         myMedian = self.latencyMedian()
         plt.axhline(y = myMean, color = 'r', linestyle = '--',label="Mean: " + str(myMean) +' ms')
         plt.axhline(y = myMedian, color = 'g', linestyle = '--',label="Median: " + str(myMedian) +' ms')
-        plt.axvline(x=int(self.application.metric.run.getParameters()['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
+        plt.axvline(x=int(self.application.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("Latency (ms)")
         plt.legend()
