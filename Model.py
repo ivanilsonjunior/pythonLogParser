@@ -602,7 +602,7 @@ class RPL(Base):
         parents = {}
         time = slice
         anterior = 0
-        endtime = 3600000001
+        endtime = self.metric.run.experiment.getTimeout() * 1000 #getTimeout is in ms * for us
         retorno = []
         while time < endtime:
             records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "links" in rec.rawData and rec.simTime > anterior and rec.simTime < time]
@@ -952,7 +952,7 @@ class MAC(Base):
                     time = j[0]/1000
                     plt.plot(time, index, marker="^", color="green")
                     x[0] = time
-                    x[1] = (3600) #sim end without node's disconnection
+                    x[1] = (self.metric.run.experiment.getTimeout()/1000) #sim end without node's disconnection
                 else:
                     time = j[0]/1000
                     plt.plot(time, index, marker="v", color="red")
