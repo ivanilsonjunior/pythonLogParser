@@ -60,6 +60,7 @@
         <h1>Parameters: </h1>
         <h2>Simulation</h2>
         <ul>
+          <li>Sim Timeout: {{ run.experiment.getTimeout() }} ms</li>
           <li>Run Duration: {{ run.getRunDuration() }}</li>
           <li>Number of nodes: {{run.maxNodes - 1}} </li>
           <li>Radio Medium: {{run.parameters['radiomedium']}} </li>
