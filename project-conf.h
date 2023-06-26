@@ -31,9 +31,9 @@
 
 /* Logging */
 #define LOG_CONF_LEVEL_RPL                         LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_WARN
+#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_NONE
+#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_NONE
+#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_NONE
 #define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_INFO
 /*#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_DBG*/
 #define TSCH_LOG_CONF_PER_SLOT                     0
@@ -51,11 +51,15 @@
 #define RPL_CONF_OF_OCP RPL_OCP_OF0 /* tells to use OF0 for DAGs rooted at this node */
 #define RPL_CONF_SUPPORTED_OFS {&rpl_of0, &rpl_mrhof} /* tells to compile in support for both OF0 and MRHOF */
 /* TSCH SLOT FRAME*/
+<<<<<<< Updated upstream
 /* 6TiSCH schedule length */
 #define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 19
 #define TSCH_CONF_MAC_MAX_FRAME_RETRIES 3
 #define TSCH_QUEUE_CONF_NUM_PER_NEIGHBOR 32
 #define ENERGEST_CONF_ON 1
+=======
+#define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 33
+>>>>>>> Stashed changes
 #define TSCH_CONF_MAC_MAX_FRAME_RETRIES 3
 
 #define SICSLOWPAN_CONF_FRAG 1 /* No fragmentation */
