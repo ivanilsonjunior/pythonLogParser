@@ -57,7 +57,7 @@ class Runner:
         if self.useJar:
             args = " ".join(["java -Djava.awt.headless=true -jar ", self.cooja_jar, "-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH, "--logname=COOJA.log"])
         else:
-            args = " ".join([self.COOJA_PATH + "/gradlew run --no-watch-fs --parallel --build-cache -p", self.COOJA_PATH, "--args='-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH, "-logdir=" + self.SELF_PATH, "--logname=COOJA.log" + "'"])
+            args = " ".join([self.COOJA_PATH + "/gradlew run --no-watch-fs --parallel --build-cache -p", self.COOJA_PATH, "--args='--gui=false ", filename,"--logdir=" + self.SELF_PATH, "'"])
         sys.stdout.write("  Running Cooja, args={}\n".format(args))
 
         (retcode, output) = self.run_subprocess(args, '')
