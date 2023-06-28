@@ -6,6 +6,7 @@
 # My customization
 *.pdf
 org/**
+temp/
 *.cooja
 *.db
 *.bak
@@ -287,3 +288,4 @@ Thumbs.db
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,java,python,java-web,code-java,visualstudiocode
+historico.txt

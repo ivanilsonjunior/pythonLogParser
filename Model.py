@@ -103,7 +103,7 @@ class Experiment(Base):
 
     def bulkRun(self, dictVariations, repetitions):
         '''
-        bulkRun was made for perform various run by variation of project.conf parameters. You should pass a dict with project.conf defines variations ex: dictVariations = {'TSCH_SCHEDULE_CONF_DEFAULT_LENGTH': [5,7,9], 'APP_SEND_INTERVAL_SEC': [1,3,5]} and the number of repetitions
+        bulkRun was made for perform various run by variation of project.conf parameters. You have to pass a dict with a project.conf defines variations ex: dictVariations = {'TSCH_SCHEDULE_CONF_DEFAULT_LENGTH': [5,7,9], 'APP_SEND_INTERVAL_SEC': [1,3,5]} and the number of repetitions
         '''
         keys, values = zip(*dictVariations.items())
         permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
@@ -129,12 +129,14 @@ class Experiment(Base):
             with open('temp/Makefile','w') as file:
                 file.write(filedata)
             for run in range(repetitions):
+                # Generate a new randomseed for each run
                 import lxml.etree
                 import random
                 simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
                 rand = simFile.xpath("//randomseed")[0]
                 rand.text = str(random.randint(0,65535))
                 open(str("temp/" + self.experimentFile), 'w').write(lxml.etree.tounicode(simFile))
+                #End Generate a new randomseed for each run
                 runner = Runner(str("temp/" + self.experimentFile))
                 newRun = Run()
                 newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
@@ -367,7 +369,7 @@ class Run(Base):
 
 class ProjectConfFile(Base):
     '''
-    Represents the project-conf.h file
+    Represents the project-conf.h file which is linked to experiment. Its used by bulkRun method
     '''
     __tablename__ = 'projectconf'
     id = Column(Integer, primary_key=True)
