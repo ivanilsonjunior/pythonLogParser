@@ -160,8 +160,8 @@ class Experiment(Base):
         Its a personal demanding for my experiements. In my experiments I have run with SlotFrame length [5,7 and 11] and APP_SEDD_INTERVAL of [3600(No App data), 1, 2, 3, 4, 5]
         '''
         self = self
-        sfLen = ['5','7','11']
-        sendInterval = ['1200','1','2','3','4','5']
+        sfLen = ['11','19','33']
+        sendInterval = ['2','3','4','5','6']
         dataset = {}
         dados = []
         for r in self.runs:
