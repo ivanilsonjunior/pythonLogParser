@@ -166,6 +166,7 @@ class Experiment(Base):
         sendInterval = ['2','3','4','5','6']
         dataset = {}
         dados = []
+        runs = len(self.runs)
         for r in self.runs:
             dataset[self.experimentFile] = {}
             for sf in sfLen:
@@ -176,7 +177,10 @@ class Experiment(Base):
             for sf in sfLen:
                 if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
                     #Put Here your metrics
+                    print(self.name + ' - extracting data from run ' , r.id , ' of ' , runs , ' > SF Length ' + r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] + ' > Send Interval ' + r.parameters['APP_SEND_INTERVAL_SEC'], end='\r')
                     dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
+            r.records = []
+        print("Done generating CSV")
         for e in dataset.keys():
             for sfleng in dataset[e].keys():
                 for sentInt in dataset[e][sfleng].keys():
@@ -186,6 +190,7 @@ class Experiment(Base):
                     data['Sent Interval'] = sentInt
                     data.update(json.loads(df.mean().to_json()))
                     dados.append(data)
+                    del data
         df = pd.json_normalize(dados) 
         df.to_csv(filename)
         dados = []
