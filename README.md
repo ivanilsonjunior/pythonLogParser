@@ -11,6 +11,9 @@ Another Log Parser for Contiki-NG Experiments.
 - After the run, the log is parsed to an ORM
 - Metrics and network behaviour could be extracted from ORM
 
+## Live Demonstration
+You can access a live demo: [http://coimbra.ifrn.edu.br/nalpios/](http://coimbra.ifrn.edu.br/nalpios/)
+
 ## Classes
 ### [Runner.py](https://github.com/ivanilsonjunior/pythonLogParser/blob/main/Runner.py)
 It's responsible for calling Cooja and running the experiments, could easily used for calling the Cooja by other projects. It is an encapsulated version of [run-cooja.py](https://github.com/contiki-ng/contiki-ng/blob/develop/examples/benchmarks/result-visualization/run-cooja.py)
