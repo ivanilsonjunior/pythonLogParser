@@ -13,7 +13,7 @@
           <h1 class="display-4">There are {{ count }} Experiments</h1>
 	        <ol>
             {% for exp in experiments %}
-            <p><a href="/experiment/{{exp.id}}">Id: {{ exp.id }} - {{ exp.name }} ( {{ exp.experimentFile }} )</a></p>
+            <p><a href="experiment/{{exp.id}}">Id: {{ exp.id }} - {{ exp.name }} ( {{ exp.experimentFile }} )</a></p>
             {% endfor %}
 	        </ol>
         </div>

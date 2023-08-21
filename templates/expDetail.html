@@ -57,13 +57,13 @@
       </div>
       <div class="container">
           <h3>Runs</h3>
-          <form method="get" action="/experiment/run/{{exp.id}}">
+          <form method="get" action="run/{{exp.id}}">
             <button type="submit">New Run</button>
         </form>
        <ul id="myUL">
           {% for run in exp.runs %}
           <ul id="myUL">
-            <li><span class="caret"> {{run.experiment.experimentFile }}: Run(<a href="/run/{{run.id}}">  {{run.id }} </a>)</span>
+            <li><span class="caret"> {{run.experiment.experimentFile }}: Run(<a href="../run/{{run.id}}">  {{run.id }} </a>)</span>
             <!--
               <ul class="nested">
                 <li>SlotFrame Size:  run.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] }}</li>
