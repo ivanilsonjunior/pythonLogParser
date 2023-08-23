@@ -842,7 +842,10 @@ class RPL(Base):
         return attachedTime
     
     def getAttachTimeMean(self) -> float():
-        return pd.DataFrame(self.getAttachTimeByNode()).mean().to_numpy()[0]
+        result = self.getAttachTimeByNode()
+        result.pop(0) #//discarting the first element(0)
+        result.pop(0) #//discarting the second element(1)
+        return pd.DataFrame(result).mean().to_numpy()[0]
 
 class MACMessage(Base):
     '''
