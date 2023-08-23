@@ -103,9 +103,11 @@
           <div class="content">
             <p>Parent Switches:
               <img src="data:image/png;base64,{{run.metric.rpl.printParentSwitches()}}"/></p>
-              <p>Final Network Nodes Parents:
-                <img src="data:image/png;base64,{{run.metric.rpl.printNetwork()}}"/></p>
-                <p>Variation of Trickle Time and Rank:
+            <p>Node's DODAG attach time:
+                <img src="data:image/png;base64,{{run.metric.rpl.printAttachment()}}"/></p>
+            <p>Final Network Nodes Parents:
+              <img src="data:image/png;base64,{{run.metric.rpl.printNetwork()}}"/></p>
+            <p>Variation of Trickle Time and Rank:
                 <img src="data:image/png;base64,{{run.metric.rpl.printMetrics()}}"/></p>
             </div>
         {% if run.parameters['MAKE_MAC'] == "MAKE_MAC_TSCH" %}

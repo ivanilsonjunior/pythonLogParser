@@ -765,6 +765,84 @@ class RPL(Base):
         #
         plt.savefig(tempBuffer, format = 'png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
+    
+    def processAttachment(self):
+        '''
+        Process the Parent Switches for creating a list of tuple to compute node's attachment time in DODAG
+        '''
+        data = self.processParentSwitches()
+
+        results = [[] for x in range(self.metric.run.maxNodes)]
+        for i in data:
+            for j in data[i]:
+                if j['old'] == None and j['new'] is not None:
+                    results[int(i)].append(tuple((float(j['time'])//1000,True)))
+                    continue
+                if j['old'] is not None and j['new'] == None:
+                    results[int(i)].append(tuple((float(j['time'])//1000,False)))
+        return results
+
+
+    def printAttachment(self):
+        import matplotlib.pyplot as plt
+        import io
+        import base64
+        tempBuffer = io.BytesIO()
+        plt.clf()
+        index = 2
+        results = self.processAttachment()
+        for i in results[2:]:
+            started = 0
+            x = [0,0]
+            for j in i:
+                if j[1]:
+                    time = j[0]/1000
+                    plt.plot(time, index, marker="^", color="green")
+                    x[0] = time
+                    x[1] = (self.metric.run.experiment.getTimeout()/1000) #sim end without node's disconnection
+                else:
+                    time = j[0]/1000
+                    plt.plot(time, index, marker="v", color="red")
+                    x[1] = time
+                    plt.plot(x,[index,index])
+                    x = [0,0]
+            plt.plot(x,[index,index])
+            index +=1
+        plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
+        plt.xlabel("Simulation Time (S)")
+        plt.ylabel("Nodes")
+        plt.yticks(range(2,self.metric.run.maxNodes))
+        plt.title("Node DODAG Attach Time (RPL)")
+        plt.savefig(tempBuffer, format = 'png')
+        return base64.b64encode(tempBuffer.getvalue()).decode()
+    
+    def getAttachTimeByNode(self) -> list():
+        results =  self.processAttachment()
+        indice = 0
+        attachedTime = [[0] for x in range(self.metric.run.maxNodes)]
+        for i in results:
+            tempoCon = 0
+            oldConn = False
+            tupla = 0
+            if indice > 1:
+                ultimo,dele = i[-1]
+            for tempo,isConn in i:
+                tupla += 1
+                if isConn is True and oldConn is False:
+                    tempoCon = tempo
+                    oldConn = isConn
+                    if tempo == ultimo:
+                        attachedTime[indice][0] += self.metric.run.experiment.getTimeout() - tempo
+                    continue
+                if isConn is False and oldConn is True:
+                    oldConn = isConn
+                    attachedTime[indice][0] += tempo - tempoCon
+                    continue
+            indice += 1
+        return attachedTime
+    
+    def getAttachTimeMean(self) -> float():
+        return pd.DataFrame(self.getAttachTimeByNode()).mean().to_numpy()[0]
 
 class MACMessage(Base):
     '''
