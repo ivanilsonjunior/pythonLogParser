@@ -1034,6 +1034,7 @@ class MAC(Base):
     
     def printIngress(self):
         import matplotlib.pyplot as plt
+        from matplotlib.lines import Line2D
         import io
         import base64
         tempBuffer = io.BytesIO()
@@ -1057,6 +1058,12 @@ class MAC(Base):
                     x = [0,0]
             plt.plot(x,[index,index])
             index +=1
+            handles, labels = plt.gca().get_legend_handles_labels()
+            attach = Line2D([0], [0], marker="^", color="green", label="TSCH Ingress")
+            detach = Line2D([0], [0], marker="v", color="red", label="TSCH Disconnect")
+            warm= Line2D([0], [0], label="Warm-up Time", ls=':', c='Orange')
+            handles.extend([attach,detach,warm])
+            plt.legend(handles=handles,fontsize="x-small")
         plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (S)")
         plt.ylabel("Nodes")
