@@ -785,6 +785,8 @@ class RPL(Base):
 
     def printAttachment(self):
         import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
+        from matplotlib.lines import Line2D
         import io
         import base64
         tempBuffer = io.BytesIO()
@@ -804,9 +806,15 @@ class RPL(Base):
                     time = j[0]/1000
                     plt.plot(time, index, marker="v", color="red")
                     x[1] = time
-                    plt.plot(x,[index,index])
+                    plt.plot(x,[index,index], color="black")
                     x = [0,0]
-            plt.plot(x,[index,index])
+            plt.plot(x,[index,index], color="black")
+            handles, labels = plt.gca().get_legend_handles_labels()
+            attach = Line2D([0], [0], marker="^", color="green", label="Attached")
+            detach = Line2D([0], [0], marker="v", color="red", label="Detached")
+            warm= Line2D([0], [0], label="Warm-up Time", ls=':', c='Orange')
+            handles.extend([attach,detach,warm])
+            plt.legend(handles=handles,fontsize="x-small")
             index +=1
         plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (S)")
