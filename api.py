@@ -64,7 +64,7 @@ def getProgress():
                 if data.startswith('Script timeout in'):
                     isRun = True
                 if data.find('completed') != -1:
-                        exp = re.compile('(\d+.\d+|\d+)% completed, (\d+.\d+|\d+) sec remaining').match(data)
+                        exp = re.compile('(\d+.\d+|\d+)% completed,\s+(\d+.\d+|\d+) sec remaining').match(data)
                         progress = int(float(exp.group(1)))
                         toEnd = exp.group(2)
                 if data.startswith('Timeout'):
