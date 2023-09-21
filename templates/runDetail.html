@@ -98,6 +98,9 @@
             <p>PDR Global: {{run.metric.application.pdr.getGlobalPDR()}}%</p>
             <p>PDR Graph(per node):
               <img src="data:image/png;base64,{{run.metric.application.pdr.printPDR()}}"/></p>
+            <p>Application Generated Packets:
+                <img src="data:image/png;base64,{{run.metric.application.printAppParticipationByNode()}}"/></p>  
+              
         </div>
         <button type="button" class="collapsible">RPL</button>
           <div class="content">

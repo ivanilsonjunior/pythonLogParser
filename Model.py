@@ -559,10 +559,78 @@ class Application(Base):
         '''
         results = {}
         for i in range(1,(self.metric.run.maxNodes)):
-            results[str(i)] = 0
+            results['N' + str(i)] = 0
         for data in self.records:
-            results[str(data.srcNode)] += 1
+            results['N' + str(data.srcNode)] += 1
         return results
+    
+    def getAppParticipationByNodeSD(self) -> float:
+        '''
+        returns the SD of participation
+        '''
+        import numpy
+        data = self.getAppParticipationByNode()
+        lista = []
+        for value in data.values():
+            lista.append(value)
+        lista.pop(0) # Remove the node 0
+        return numpy.std(lista)
+    
+    def printAppParticipationByNode(self):
+        from mpl_toolkits.mplot3d import Axes3D
+        import matplotlib.pyplot as plt
+        import io
+        import base64
+        from numpy import mean
+        import matplotlib.cm as cm
+        import numpy as np
+        tempBuffer = io.BytesIO()
+        plt.clf()
+        nodes = []
+        x = []
+        y = []
+        z = []
+        latData = self.getAppParticipationByNode()
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        for node, position in self.metric.run.getNodesPosition().items():
+            nodes.append(node)
+            x.append(position['x'])
+            y.append(position['y'])
+            try:
+                if latData[node] == []: #No Node Data
+                    z.append(0)
+                    ax.text(position['x'],position['y']+5, 0, "No Data", )
+                else:
+                    z.append(mean(latData[node]))
+                    #ax.text(position['x'],position['y']+5, mean(latData[node]), mean(latData[node]) )
+            except:
+                # Node 1
+                z.append(0)
+        #ax.scatter(x, y, z, c='b', marker='o')
+        cmap = cm.get_cmap('rainbow')
+        max_height = np.max(z)   # get range of colorbars
+        min_height = np.min(z)
+        # scale each z to [0,1], and get their rgb values
+        rgba = [cmap((k-min_height)/max_height) for k in z]
+        ax.bar3d(x, y, 0, 2, 2, z, color=rgba)
+        i = 0
+        for label in nodes:
+            ax.text(x[i],y[i]+2,z[i], label)
+            i += 1
+        colourMap = plt.cm.ScalarMappable(cmap=plt.cm.rainbow)
+        colourMap.set_array(z)
+        colBar = plt.colorbar(colourMap).set_label('Number of Messages')
+        ax.set_xlabel('X Position')
+        ax.set_ylabel('Y Position')
+        #ax.set_zlabel('Latency (ms)')
+        ax.set_title("Nodes Generated Messages")
+        #ax.set_zlim3d(0,100)
+        plt.gcf().set_size_inches(8,6)
+        titulo = "Data SD = {}".format(self.getAppParticipationByNodeSD())
+        plt.legend(title=titulo,handles=[])
+        plt.savefig(tempBuffer, format = 'png')
+        return base64.b64encode(tempBuffer.getvalue()).decode()
         
 
 class RPL(Base):
