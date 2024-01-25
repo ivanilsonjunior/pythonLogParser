@@ -3,15 +3,17 @@
 Another Log Parser for Contiki-NG Experiments.
 **Based on [examples/benchmarks/result-visualization](https://github.com/contiki-ng/contiki-ng/tree/develop/examples/benchmarks/result-visualization)**, the program uses the same node.c
 
+
 ## What it does:
-- Controls the Cooja's Experiments
-- Runs Cooja on non-GUI mode
-- Keeps the generated data
-- Supports bulk runs (various runs with a newly generated random seed)
-- Uses the based example node.c as a mote. (node.c create)
-- Needs authentication for some tasks (admin:letmein)
-- After the run, the log is parsed to an ORM
-- Metrics and network behaviour could be extracted from ORM
+
+- Controls Cooja's experiments.
+- Runs Cooja in non-GUI mode.
+- Retains the generated data.
+- Supports bulk runs (multiple runs with a newly generated random seed).
+- Utilises the base example node.c as a mote (node.c create).
+- Requires authentication for specific tasks (admin:letmein).
+- After the run, the log is parsed into an ORM.
+- More than 40 metrics and network behaviour can be extracted from the ORM.
 
 ## Live Demonstration
 You can access a live demo: [http://coimbra.ifrn.edu.br/nalpios/](http://coimbra.ifrn.edu.br/nalpios/) or
