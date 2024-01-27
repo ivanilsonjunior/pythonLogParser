@@ -162,8 +162,8 @@ class Experiment(Base):
         Its a personal demanding for my experiements. In my experiments I have run with SlotFrame length [5,7 and 11] and APP_SEDD_INTERVAL of [3600(No App data), 1, 2, 3, 4, 5]
         '''
         self = self
-        sfLen = ['11','19','33']
-        sendInterval = ['2','3','4','5','6']
+        sfLen = ['19','33']
+        sendInterval = ['2','3','4','5','1']
         dataset = {}
         dados = []
         runs = len(self.runs)
@@ -1081,6 +1081,9 @@ class MAC(Base):
         self.results =  results
         
     def processIngress(self):
+        '''
+        Processes the node ingresses and returns a list containing the time of the event and the event of sync (Sync and Desync)
+        '''
         data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
         results = [[] for x in range(self.metric.run.maxNodes)]
         for rec in data:
@@ -1091,6 +1094,43 @@ class MAC(Base):
                 results[int(rec.node)].append(tuple((float(rec.simTime)//1000, True)))
                 continue
         return results
+    
+    def getSyncTimeByNode(self) -> list():
+        '''
+        Returns a list containing the time that each node stayed synchronised.
+        '''
+        results =  self.processIngress()
+        indice = 0
+        syncedTime = [[0] for x in range(self.metric.run.maxNodes)]
+        for i in results:
+            tempoCon = 0
+            oldConn = False
+            tupla = 0
+            if indice > 1:
+                ultimo,dele = i[-1]
+            for tempo,isConn in i:
+                tupla += 1
+                if isConn is True and oldConn is False:
+                    tempoCon = tempo
+                    oldConn = isConn
+                    if tempo == ultimo:
+                        syncedTime[indice][0] += self.metric.run.experiment.getTimeout() - tempo
+                    continue
+                if isConn is False and oldConn is True:
+                    oldConn = isConn
+                    syncedTime[indice][0] += tempo - tempoCon
+                    continue
+            indice += 1
+        return syncedTime
+
+    def getSyncTimeMean(self) -> float():
+        '''
+        Returns mean time of nodes stayed synchronised.
+        '''
+        result = self.getSyncTimeByNode()
+        result.pop(0) #//discarting the first element(0)
+        result.pop(0) #//discarting the second element(1)
+        return pd.DataFrame(result).mean().to_numpy()[0]
 
     def formationTime(self) -> float():
         '''
