@@ -477,23 +477,24 @@ class Metrics(Base):
         retorno['app-latency-median'] = self.application.latency.latencyMedian()
         retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
         retorno['app-genPkg'] = len(self.application.records)
-        retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
+        #retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
         #retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=600000000)
         #retorno['rpl-avgHopsSliced'] = self.rpl.getAverangeHops()
-        rplMessages = ['total','multicast-DIO','unicast-DIO','DIS','DAO','DAO-ACK']
-        for typ in rplMessages:
-            rplType = self.rpl.getControlMessages()
-            chave = str('rpl-msg-'+ typ)
-            retorno.setdefault(chave,0)
-            try:
-                retorno[chave] = rplType[typ]
-            except KeyError:
-                retorno[chave] = 0
-        retransmissions = self.mac.getRetransmissions()
-        retorno['mac-retransmissions'] = retransmissions['retransmissions']
-        retorno['mac-retransRate'] = retransmissions['retransRate']
-        retorno['mac-disconnections'] = self.mac.getDisconnections()
-        retorno['mac-formation'] = self.mac.formationTime()
+        #rplMessages = ['total','multicast-DIO','unicast-DIO','DIS','DAO','DAO-ACK']
+        #for typ in rplMessages:
+        #    rplType = self.rpl.getControlMessages()
+        #    chave = str('rpl-msg-'+ typ)
+        #    retorno.setdefault(chave,0)
+        #    try:
+        #        retorno[chave] = rplType[typ]
+        #    except KeyError:
+        #        retorno[chave] = 0
+        retorno['rpl-attach-time'] = self.rpl.getAttachTimeMean()
+        #retransmissions = self.mac.getRetransmissions()
+        #retorno['mac-retransmissions'] = retransmissions['retransmissions']
+        #retorno['mac-retransRate'] = retransmissions['retransRate']
+        #retorno['mac-disconnections'] = self.mac.getDisconnections()
+        #retorno['mac-formation'] = self.mac.formationTime()
         #nbrQueue = self.mac.getNBRQueueOccupation()
         #retorno['mac-queuenbr-length'] = nbrQueue['length']
         #retorno['mac-queuenbr-occupation'] = nbrQueue['occupation']
@@ -502,9 +503,10 @@ class Metrics(Base):
         #retorno['mac-queueglobal-length'] = globalQueue['length']
         #retorno['mac-queueglobal-occupation'] = globalQueue['occupation']
         #retorno['mac-queueglobal-variance'] = globalQueue['variance']
-        retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
-        retorno['energy-RDC'] = self.energy.getRadioDutyCicle()
-        retorno['energy-ChannelOccupation'] = self.energy.getChannelUtilization()
+        retorno['mac-sync-time'] = self.mac.getSyncTimeMean()
+        #retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
+        #retorno['energy-RDC'] = self.energy.getRadioDutyCicle()
+        #retorno['energy-ChannelOccupation'] = self.energy.getChannelUtilization()
         return retorno
 
 class Application(Base):
