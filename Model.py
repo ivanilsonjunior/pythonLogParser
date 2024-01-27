@@ -915,7 +915,12 @@ class RPL(Base):
             oldConn = False
             tupla = 0
             if indice > 1:
-                ultimo,dele = i[-1]
+                try:
+                    ultimo,dele = i[-1]
+                except IndexError:
+                    # The node never has attached
+                    attachedTime[indice][0] = None
+                    continue
             for tempo,isConn in i:
                 tupla += 1
                 if isConn is True and oldConn is False:
