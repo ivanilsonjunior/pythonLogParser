@@ -118,6 +118,7 @@ class Experiment(Base):
             os.mkdir("temp")
             #copying files
             shutil.copy(self.experimentFile, "temp")
+            shutil.copy("coojalogger.js","temp")
             shutil.copy("Makefile","temp")
             # TODO: I Should get the mote.c file via .csc file
             shutil.copy("node.c","temp")
