@@ -96,7 +96,12 @@ class Experiment(Base):
         '''
         Returns the simulation timeout in miliseconds
         '''
-        simFileContents = minidom.parse(self.experimentFile).getElementsByTagName('script')[0].firstChild.data
+        try:
+            simFileContents = minidom.parse(self.experimentFile).getElementsByTagName('script')[0].firstChild.data
+        except IndexError:
+            nameFile = minidom.parse(self.experimentFile).getElementsByTagName('scriptfile')[0].firstChild.data.replace("[CONFIG_DIR]/","")
+            with open(nameFile,"r") as f:
+                simFileContents = f.read()
         pattern = r"TIMEOUT\((\d+)\)"
         matches = re.search(pattern, simFileContents)
         return int(matches.group(1))
@@ -181,7 +186,7 @@ class Experiment(Base):
                     print(self.name + ' - extracting data from run ' , r.id , ' of ' , runs , ' > SF Length ' + r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] + ' > Send Interval ' + r.parameters['APP_SEND_INTERVAL_SEC'], end='\r')
                     dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
             r.records = []
-        print("Done generating CSV")
+        print("\nDone generating CSV")
         for e in dataset.keys():
             for sfleng in dataset[e].keys():
                 for sentInt in dataset[e][sfleng].keys():
@@ -920,7 +925,7 @@ class RPL(Base):
                     ultimo,dele = i[-1]
                 except IndexError:
                     # The node never has attached
-                    attachedTime[indice][0] = None
+                    attachedTime[indice][0] = 0
                     continue
             for tempo,isConn in i:
                 tupla += 1
@@ -1115,7 +1120,12 @@ class MAC(Base):
             oldConn = False
             tupla = 0
             if indice > 1:
-                ultimo,dele = i[-1]
+                try:
+                    ultimo,dele = i[-1]
+                except IndexError:
+                    # The node never has attached
+                    syncedTime[indice][0] = 0
+                    continue
             for tempo,isConn in i:
                 tupla += 1
                 if isConn is True and oldConn is False:
