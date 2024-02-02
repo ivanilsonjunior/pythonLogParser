@@ -314,7 +314,10 @@ class Run(Base):
                 logNode = int(fields[1])
                 if (fields[2].startswith("Assertion")):
                     continue
-                logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
+                try:
+                    logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
+                except IndexError:
+                    continue
                 logLevel = logDesc[0].strip()
                 logType = logDesc[1].strip()
                 data = line.split("]")[1].strip()
