@@ -1,55 +1,48 @@
-'''
-
-Model class for Cooja System Log Parser
-
-'''
 from datetime import datetime
-from hashlib import new
-from re import S
 import re
 import os
-import statistics
-from types import new_class
-from typing import Counter
-from xml.dom import minidom
-from numpy import apply_along_axis, median
-import matplotlib
-from sqlalchemy.sql.base import Executable
-from sqlalchemy.sql.sqltypes import PickleType
-from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.ext.mutable import MutableList
-matplotlib.use('Agg')
-import threading
-import itertools
-import pandas as pd
-
-from sqlalchemy.sql.elements import TextClause
-from Runner import Runner
-from sqlalchemy import create_engine, MetaData, ForeignKey, Column, Integer, String, Float, DateTime, Boolean, engine
-from sqlalchemy.orm import relationship
-#Para realizar as alterações/consultas
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func, inspect
-from sqlalchemy import create_engine, MetaData
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import shutil
+import io
+import base64
 import json
-from sqlalchemy.sql.expression import label, null
-from sqlalchemy.orm import class_mapper
-from sqlalchemy import orm
+import math
+import random
+import statistics
+import itertools
+import subprocess
 
+from collections import Counter
+from xml.dom import minidom
+
+import lxml.etree
+import numpy as np
+from numpy import median
+import pandas as pd
+import networkx as nx
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.lines import Line2D
+from mpl_toolkits.mplot3d import Axes3D
+
+from sqlalchemy import create_engine, MetaData, ForeignKey, Column, Integer, String, DateTime, Boolean, PickleType
+from sqlalchemy.ext.mutable import MutableDict, MutableList
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+
+from Runner import Runner
 
 
 DBName = "Metrics.db"
-fileEngine = create_engine('sqlite:///' + DBName, connect_args={'check_same_thread': False}, echo = False)
+fileEngine = create_engine('sqlite:///' + DBName, connect_args={'check_same_thread': False}, echo=False)
 
 DBMemory = ":memory:"
-memEngine = create_engine('sqlite:///' + DBMemory, connect_args={'check_same_thread': False}, echo = False)
+memEngine = create_engine('sqlite:///' + DBMemory, connect_args={'check_same_thread': False}, echo=False)
 memConnection = memEngine.raw_connection().connection
 engine = fileEngine
 
 meta = MetaData()
-meta.bind = engine
 Base = declarative_base(metadata=meta)
 Session = sessionmaker(bind=engine)
 db = Session()
@@ -67,14 +60,14 @@ class Experiment(Base):
     __tablename__ = 'experiments'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
-    #parameters = Column(String (200), nullable=False)
-    experimentFile = Column(String (200), nullable=False)
+    experimentFile = Column(String(200), nullable=False)
     confFile_id = Column(Integer, ForeignKey('projectconf.id'))
     confFile = relationship("ProjectConfFile", uselist=False)
+
     def run(self):
         runner = Runner(str(self.experimentFile))
         newRun = Run()
-        newRun.maxNodes = len(minidom.parse(self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
+        newRun.maxNodes = len(minidom.parse(self.experimentFile).getElementsByTagName('id')) + 1
         newRun.experiment = self
         newRun.start = datetime.now()
         try:
@@ -89,9 +82,9 @@ class Experiment(Base):
             newRun.metric.application.process()
             return "Done"
         except Exception as ex:
-            print (ex)
+            print(ex)
             return "Error"
-    
+
     def getTimeout(self):
         '''
         Returns the simulation timeout in miliseconds
@@ -114,38 +107,28 @@ class Experiment(Base):
         permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
         for i in permutations_dicts:
             for k in i.keys():
-                self.confFile.defines[k] =  i[k]
-            # Creating temp folder
-            import os
-            import shutil
+                self.confFile.defines[k] = i[k]
             if os.path.isdir("temp"):
                 shutil.rmtree("temp")
             os.mkdir("temp")
-            #copying files
             shutil.copy(self.experimentFile, "temp")
-            shutil.copy("coojalogger.js","temp")
-            shutil.copy("Makefile","temp")
-            # TODO: I Should get the mote.c file via .csc file
-            shutil.copy("node.c","temp")
+            shutil.copy("coojalogger.js", "temp")
+            shutil.copy("Makefile", "temp")
+            shutil.copy("node.c", "temp")
             self.confFile.save("temp/project-conf.h")
-            #Adjsting the Makefile for the Contiki's right place
-            with open('temp/Makefile','r') as file:
+            with open('temp/Makefile', 'r') as file:
                 filedata = file.read()
-                filedata = filedata.replace('../..','../../..')
-            with open('temp/Makefile','w') as file:
+                filedata = filedata.replace('../..', '../../..')
+            with open('temp/Makefile', 'w') as file:
                 file.write(filedata)
             for run in range(repetitions):
-                # Generate a new randomseed for each run
-                import lxml.etree
-                import random
                 simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
                 rand = simFile.xpath("//randomseed")[0]
-                rand.text = str(random.randint(0,65535))
+                rand.text = str(random.randint(0, 65535))
                 open(str("temp/" + self.experimentFile), 'w').write(lxml.etree.tounicode(simFile))
-                #End Generate a new randomseed for each run
                 runner = Runner(str("temp/" + self.experimentFile))
                 newRun = Run()
-                newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
+                newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id')) + 1
                 newRun.experiment = self
                 newRun.start = datetime.now()
                 try:
@@ -158,18 +141,16 @@ class Experiment(Base):
                     db.add(newRun)
                     db.commit()
                     newRun.metric.application.process()
-                    #continue
                 except Exception as ex:
-                    print (ex)
+                    print(ex)
                     return "Error"
 
     def toCsv(self, filename):
         '''
         Its a personal demanding for my experiements. In my experiments I have run with SlotFrame length [5,7 and 11] and APP_SEDD_INTERVAL of [3600(No App data), 1, 2, 3, 4, 5]
         '''
-        self = self
-        sfLen = ['19','33']
-        sendInterval = ['2','3','4','5','1']
+        sfLen = ['19', '33']
+        sendInterval = ['2', '3', '4', '5', '1']
         dataset = {}
         dados = []
         runs = len(self.runs)
@@ -182,8 +163,7 @@ class Experiment(Base):
         for r in self.runs:
             for sf in sfLen:
                 if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
-                    #Put Here your metrics
-                    print(self.name + ' - extracting data from run ' , r.id , ' of ' , runs , ' > SF Length ' + r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] + ' > Send Interval ' + r.parameters['APP_SEND_INTERVAL_SEC'], end='\r')
+                    print(self.name + ' - extracting data from run ', r.id, ' of ', runs, ' > SF Length ' + r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] + ' > Send Interval ' + r.parameters['APP_SEND_INTERVAL_SEC'], end='\r')
                     dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
             r.records = []
         print("\nDone generating CSV")
@@ -197,7 +177,7 @@ class Experiment(Base):
                     data.update(json.loads(df.mean().to_json()))
                     dados.append(data)
                     del data
-        df = pd.json_normalize(dados) 
+        df = pd.json_normalize(dados)
         df.to_csv(filename)
         dados = []
         for e in dataset.keys():
@@ -209,8 +189,9 @@ class Experiment(Base):
                     data['Sent Interval'] = sentInt
                     data.update(json.loads(df.std().to_json()))
                     dados.append(data)
-        df = pd.json_normalize(dados)         
-        df.to_csv("STD"+filename)      
+        df = pd.json_normalize(dados)
+        df.to_csv("STD" + filename)
+
 
 class Run(Base):
     '''
@@ -225,12 +206,12 @@ class Run(Base):
             metric: Metrics simulation
     '''
     __tablename__ = "runs"
-    id = Column(Integer,primary_key=True)
+    id = Column(Integer, primary_key=True)
     start = Column(DateTime)
     end = Column(DateTime)
     maxNodes = Column(Integer)
     parameters = Column(PickleType)
-    experiment_id = Column(Integer, ForeignKey('experiments.id')) # The ForeignKey must be the physical ID, not the Object.id
+    experiment_id = Column(Integer, ForeignKey('experiments.id'))
     experiment = relationship("Experiment", back_populates="runs")
     metric = relationship("Metrics", uselist=False, back_populates="run")
 
@@ -238,25 +219,19 @@ class Run(Base):
         layer = {}
         try:
             layer['mac'] = self.parameters['MAKE_MAC'].split('_')[-1]
-        except:
+        except Exception:
             layer['mac'] = "TSCH"
         try:
             layer['rpl'] = self.parameters['MAKE_ROUTING'].split('_')[-1]
-        except:
+        except Exception:
             layer['rpl'] = "LITE"
         try:
             layer['net'] = self.parameters['MAKE_NET'].split('_')[-1]
-        except:
+        except Exception:
             layer['net'] = "IPV6"
-            
-        return "ID: {} Exp: {} MAC: {mac} ROUTING: {rpl} NET: {net}".format(self.id ,self.experiment.id, **layer)
-
+        return "ID: {} Exp: {} MAC: {mac} ROUTING: {rpl} NET: {net}".format(self.id, self.experiment.id, **layer)
 
     def printNodesPosition(self):
-        from mpl_toolkits.mplot3d import Axes3D
-        import matplotlib.pyplot as plt
-        import io
-        import base64
         tempBuffer = io.BytesIO()
         plt.clf()
         nodes = []
@@ -273,21 +248,18 @@ class Run(Base):
         ax.scatter(x, y, z, c='b', marker='o')
         i = 0
         for label in nodes:
-            ax.text(x[i],y[i],z[i], label)
+            ax.text(x[i], y[i], z[i], label)
             i += 1
-
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
-        #ax.set_zlabel('Z Label')
         ax.set_title("Nodes position")
-        ax.set_zlim3d(0,100)
-
-        plt.savefig(tempBuffer, format = 'png')
+        ax.set_zlim3d(0, 100)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
     def getNodesPosition(self):
         myData = {}
-        for i in range(2,(self.maxNodes)):
+        for i in range(2, (self.maxNodes)):
             myData['N' + str(i)] = {}
         doc = minidom.parse(self.experiment.experimentFile)
         for i in doc.getElementsByTagName('mote'):
@@ -295,11 +267,10 @@ class Run(Base):
                 myId = str(i.getElementsByTagName('id')[0].firstChild.data)
                 x = float(i.getElementsByTagName('x')[0].firstChild.data)
                 y = float(i.getElementsByTagName('y')[0].firstChild.data)
-                myData['N' + myId] = {'x' : x, 'y' : y}
-            except:
-                None
+                myData['N' + myId] = {'x': x, 'y': y}
+            except Exception:
+                pass
         return myData
-
 
     def processRun(self):
         with open("COOJA.testlog", "r") as f:
@@ -315,37 +286,33 @@ class Run(Base):
                 if (fields[2].startswith("Assertion")):
                     continue
                 try:
-                    logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
+                    logDesc = re.findall(r"\[(.*?)\]", line)[0].split(":")
                 except IndexError:
                     continue
                 logLevel = logDesc[0].strip()
                 logType = logDesc[1].strip()
                 data = line.split("]")[1].strip()
-                newRecord = Record(logTime,logNode,logLevel,logType,data,self)
-                #db.add(newRecord)
+                newRecord = Record(logTime, logNode, logLevel, logType, data, self)
                 self.records.append(newRecord)
-    
+
     def getParameters(self):
         '''
         Adapted from: https://stackoverflow.com/questions/2804543/read-subprocess-stdout-line-by-line
         '''
-        import subprocess
-        proc = subprocess.Popen(['make','viewconf'],bufsize=1, universal_newlines=True, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(['make', 'viewconf'], bufsize=1, universal_newlines=True, stdout=subprocess.PIPE)
         myDict = {}
-        for param in ['radiomedium','transmitting_range','interference_range','success_ratio_tx','success_ratio_rx']:
+        for param in ['radiomedium', 'transmitting_range', 'interference_range', 'success_ratio_tx', 'success_ratio_rx']:
             myDict[param] = str(minidom.parse(self.experiment.experimentFile).getElementsByTagName(param)[0].firstChild.data).strip()
-        for line in iter(proc.stdout.readline,''):
+        for line in iter(proc.stdout.readline, ''):
             if not line:
                 break
             if line.startswith("####"):
                 line = line.split()
                 try:
-                    #print (line[1].split("\"")[1] , "value", line [4])
-                    myDict[line[1].split("\"")[1]] = line [4]
+                    myDict[line[1].split("\"")[1]] = line[4]
                 except IndexError:
                     if (line[1].split("\"")[1].startswith("MAKE")):
-                        #print (line[1].split("\"")[1] , "value", line [3])
-                        myDict[line[1].split("\"")[1]] = line [3]
+                        myDict[line[1].split("\"")[1]] = line[3]
                         continue
                     continue
         return myDict
@@ -354,32 +321,30 @@ class Run(Base):
         '''
         Adapted from: https://stackoverflow.com/questions/2804543/read-subprocess-stdout-line-by-line
         '''
-        import subprocess
-        proc = subprocess.Popen(['make','viewconf'],bufsize=1, cwd="temp", universal_newlines=True, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(['make', 'viewconf'], bufsize=1, cwd="temp", universal_newlines=True, stdout=subprocess.PIPE)
         myDict = {}
-        for param in ['randomseed','radiomedium','transmitting_range','interference_range','success_ratio_tx','success_ratio_rx']:
+        for param in ['randomseed', 'radiomedium', 'transmitting_range', 'interference_range', 'success_ratio_tx', 'success_ratio_rx']:
             myDict[param] = str(minidom.parse(self.experiment.experimentFile).getElementsByTagName(param)[0].firstChild.data).strip()
-        for line in iter(proc.stdout.readline,''):
+        for line in iter(proc.stdout.readline, ''):
             if not line:
                 break
             if line.startswith("####"):
                 line = line.split()
                 try:
-                    #print (line[1].split("\"")[1] , "value", line [4])
-                    myDict[line[1].split("\"")[1]] = line [4]
+                    myDict[line[1].split("\"")[1]] = line[4]
                 except IndexError:
                     if (line[1].split("\"")[1].startswith("MAKE")):
-                        #print (line[1].split("\"")[1] , "value", line [3])
-                        myDict[line[1].split("\"")[1]] = line [3]
+                        myDict[line[1].split("\"")[1]] = line[3]
                         continue
                     continue
         return myDict
 
-    def getRunDuration(self) -> DateTime:
+    def getRunDuration(self):
         '''
-            Return the run duration time.
+        Return the run duration time.
         '''
         return self.end - self.start
+
 
 class ProjectConfFile(Base):
     '''
@@ -391,16 +356,17 @@ class ProjectConfFile(Base):
 
     def __init__(self):
         defines = {}
-    
+
     def getFileContents(self):
         content = ""
         for k, v in self.defines.items():
             content += ("#define " + k + " " + str(v) + "\n")
         return content
-    
+
     def save(self, filename):
         with open(filename, "w") as file:
             file.write(self.getFileContents())
+
 
 class Record(Base):
     '''
@@ -412,7 +378,6 @@ class Record(Base):
             recordType: Type (App, Protocol, Layer, etc)
             rawData: Record string
             run: Run that owns this record
-
     '''
     __tablename__ = 'records'
     id = Column(Integer, primary_key=True)
@@ -421,15 +386,17 @@ class Record(Base):
     recordLevel = Column(String(50), nullable=False)
     recordType = Column(String(50), nullable=False)
     rawData = Column(String(200), nullable=False)
-    run_id = Column(Integer, ForeignKey('runs.id')) # The ForeignKey must be the physical ID, not the Object.id
+    run_id = Column(Integer, ForeignKey('runs.id'))
     run = relationship("Run", back_populates="records")
-    def __init__(self,simtime, node,level,type,data,run):
+
+    def __init__(self, simtime, node, level, type, data, run):
         self.simTime = simtime
         self.node = node
         self.recordLevel = level
         self.recordType = type
         self.rawData = data
         self.run = run
+
 
 class Node(Base):
     '''
@@ -442,39 +409,32 @@ class Node(Base):
     posY = Column(Integer, nullable=False)
     posZ = Column(Integer, nullable=False)
 
+
 class Metrics(Base):
     '''
     This is the metrics container. TODO: Assemble
     '''
     __tablename__ = 'metrics'
     id = Column(Integer, primary_key=True)
-    run_id = Column(Integer, ForeignKey('runs.id')) # The ForeignKey must be the physical ID, not the Object.id
+    run_id = Column(Integer, ForeignKey('runs.id'))
     run = relationship("Run", back_populates="metric")
-    #application_id = Column(Integer, ForeignKey('application.id')) # The ForeignKey must be the physical ID, not the Object.id
     application = relationship("Application", uselist=False, back_populates="metric")
-    mac_id = Column(Integer, ForeignKey('mac.id')) # The ForeignKey must be the physical ID, not the Object.id
+    mac_id = Column(Integer, ForeignKey('mac.id'))
     mac = relationship("MAC", back_populates="metric")
-    rpl_id = Column(Integer, ForeignKey('rpl.id')) # The ForeignKey must be the physical ID, not the Object.id
+    rpl_id = Column(Integer, ForeignKey('rpl.id'))
     rpl = relationship("RPL", back_populates="metric")
-    energy_id = Column(Integer, ForeignKey('energy.id')) # The ForeignKey must be the physical ID, not the Object.id
+    energy_id = Column(Integer, ForeignKey('energy.id'))
     energy = relationship("Energy", back_populates="metric")
-    linkstats_id = Column(Integer, ForeignKey('linkstats.id')) # The ForeignKey must be the physical ID, not the Object.id
+    linkstats_id = Column(Integer, ForeignKey('linkstats.id'))
     linkstats = relationship("LinkStats", back_populates="metric")
-
 
     def __init__(self, run):
         self.run = run
-        #print("Self lenght:" , len(self.run.records) )
         self.application = Application(self)
-        #self.application.process()
-        #print("Processing MAC")
-        if run.parameters['MAKE_MAC'] ==  "MAKE_MAC_TSCH":
+        if run.parameters['MAKE_MAC'] == "MAKE_MAC_TSCH":
             self.mac = MAC(self)
-        #print("Processing LinkStatus")
         self.linkstats = LinkStats(self)
-        #print("Processing RPL")
         self.rpl = RPL(self)
-        #print("Processing Energy")
         self.energy = Energy(self)
 
     def getSummary(self):
@@ -486,51 +446,23 @@ class Metrics(Base):
         retorno['app-latency-median'] = self.application.latency.latencyMedian()
         retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
         retorno['app-genPkg'] = len(self.application.records)
-        #retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
-        #retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=600000000)
-        #retorno['rpl-avgHopsSliced'] = self.rpl.getAverangeHops()
-        #rplMessages = ['total','multicast-DIO','unicast-DIO','DIS','DAO','DAO-ACK']
-        #for typ in rplMessages:
-        #    rplType = self.rpl.getControlMessages()
-        #    chave = str('rpl-msg-'+ typ)
-        #    retorno.setdefault(chave,0)
-        #    try:
-        #        retorno[chave] = rplType[typ]
-        #    except KeyError:
-        #        retorno[chave] = 0
         retorno['rpl-attach-time'] = self.rpl.getAttachTimeMean()
-        #retransmissions = self.mac.getRetransmissions()
-        #retorno['mac-retransmissions'] = retransmissions['retransmissions']
-        #retorno['mac-retransRate'] = retransmissions['retransRate']
-        #retorno['mac-disconnections'] = self.mac.getDisconnections()
-        #retorno['mac-formation'] = self.mac.formationTime()
-        #nbrQueue = self.mac.getNBRQueueOccupation()
-        #retorno['mac-queuenbr-length'] = nbrQueue['length']
-        #retorno['mac-queuenbr-occupation'] = nbrQueue['occupation']
-        #retorno['mac-queuenbr-variance'] = nbrQueue['variance']
-        #globalQueue = self.mac.getGlobalQueueOccupation()
-        #retorno['mac-queueglobal-length'] = globalQueue['length']
-        #retorno['mac-queueglobal-occupation'] = globalQueue['occupation']
-        #retorno['mac-queueglobal-variance'] = globalQueue['variance']
         retorno['mac-sync-time'] = self.mac.getSyncTimeMean()
-        #retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
-        #retorno['energy-RDC'] = self.energy.getRadioDutyCicle()
-        #retorno['energy-ChannelOccupation'] = self.energy.getChannelUtilization()
         return retorno
+
 
 class Application(Base):
     __tablename__ = 'application'
     id = Column(Integer, primary_key=True)
-    metric_id = Column(Integer, ForeignKey('metrics.id')) # The ForeignKey must be the physical ID, not the Object.id
+    metric_id = Column(Integer, ForeignKey('metrics.id'))
     metric = relationship("Metrics", back_populates="application")
-    latency_id = Column(Integer, ForeignKey('latencies.id')) # The ForeignKey must be the physical ID, not the Object.id
+    latency_id = Column(Integer, ForeignKey('latencies.id'))
     latency = relationship("Latency", back_populates="application")
-    pdr_id = Column(Integer, ForeignKey('pdrs.id')) # The ForeignKey must be the physical ID, not the Object.id
+    pdr_id = Column(Integer, ForeignKey('pdrs.id'))
     pdr = relationship("PDR", back_populates="application")
     records = relationship("AppRecord", back_populates="application")
 
-
-    def __init__(self,metric):
+    def __init__(self, metric):
         self.metric = metric
         self.latency = Latency(self)
         self.pdr = PDR(self)
@@ -543,58 +475,45 @@ class Application(Base):
                 sequence = int(rec.rawData.split()[3].split("=")[1])
                 node = int(rec.rawData.split()[4].split("=")[1])
                 genTime = int(rec.simTime)
-                dstNode = 1 #That simulation doesn't define a customized sink
-                #print("Node: " ,  node , "Seq: " , sequence , "Generation Time: ", genTime ,"Destination" , dstNode)
-                newLatRec = AppRecord(genTime,node,dstNode,sequence)
+                dstNode = 1
+                newLatRec = AppRecord(genTime, node, dstNode, sequence)
                 newLatRec.rcv = False
                 db.add(newLatRec)
                 self.records.append(newLatRec)
                 continue
-            
             if rec.rawData.startswith("app receive"):
                 sequence = int(rec.rawData.split()[3].split("=")[1])
                 recTime = int(rec.simTime)
-                srcNode = int(rec.rawData.split()[4].split("=")[1].split(":")[5], 16) # Converts Hex to Dec
+                srcNode = int(rec.rawData.split()[4].split("=")[1].split(":")[5], 16)
                 for record in self.records:
                     if (record.srcNode == srcNode and record.sqnNumb == sequence):
                         record.rcvPkg(recTime)
                         record.rcv = True
-                #print("Node: " ,  srcNode  , "Seq: " , sequence , "Receive Time: ", recTime)
                         break
         db.commit()
         print("Done")
-    
+
     def getAppParticipationByNode(self) -> dict:
         '''
         Return the amount of application data generated by node
         '''
         results = {}
-        for i in range(1,(self.metric.run.maxNodes)):
+        for i in range(1, (self.metric.run.maxNodes)):
             results['N' + str(i)] = 0
         for data in self.records:
             results['N' + str(data.srcNode)] += 1
         return results
-    
+
     def getAppParticipationByNodeSD(self) -> float:
         '''
         returns the SD of participation
         '''
-        import numpy
         data = self.getAppParticipationByNode()
-        lista = []
-        for value in data.values():
-            lista.append(value)
-        lista.pop(0) # Remove the node 0
-        return numpy.std(lista)
-    
+        lista = list(data.values())
+        lista.pop(0)
+        return np.std(lista)
+
     def printAppParticipationByNode(self):
-        from mpl_toolkits.mplot3d import Axes3D
-        import matplotlib.pyplot as plt
-        import io
-        import base64
-        from numpy import mean
-        import matplotlib.cm as cm
-        import numpy as np
         tempBuffer = io.BytesIO()
         plt.clf()
         nodes = []
@@ -609,40 +528,34 @@ class Application(Base):
             x.append(position['x'])
             y.append(position['y'])
             try:
-                if latData[node] == []: #No Node Data
+                if latData[node] == []:
                     z.append(0)
-                    ax.text(position['x'],position['y']+5, 0, "No Data", )
+                    ax.text(position['x'], position['y'] + 5, 0, "No Data")
                 else:
-                    z.append(mean(latData[node]))
-                    #ax.text(position['x'],position['y']+5, mean(latData[node]), mean(latData[node]) )
-            except:
-                # Node 1
+                    z.append(np.mean(latData[node]))
+            except Exception:
                 z.append(0)
-        #ax.scatter(x, y, z, c='b', marker='o')
-        cmap = cm.get_cmap('rainbow')
-        max_height = np.max(z)   # get range of colorbars
+        cmap = plt.cm.rainbow
+        max_height = np.max(z)
         min_height = np.min(z)
-        # scale each z to [0,1], and get their rgb values
-        rgba = [cmap((k-min_height)/max_height) for k in z]
+        rgba = [cmap((k - min_height) / max_height) for k in z]
         ax.bar3d(x, y, 0, 2, 2, z, color=rgba)
         i = 0
         for label in nodes:
-            ax.text(x[i],y[i]+2,z[i], label)
+            ax.text(x[i], y[i] + 2, z[i], label)
             i += 1
         colourMap = plt.cm.ScalarMappable(cmap=plt.cm.rainbow)
         colourMap.set_array(z)
-        colBar = plt.colorbar(colourMap).set_label('Number of Messages')
+        plt.colorbar(colourMap).set_label('Number of Messages')
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
-        #ax.set_zlabel('Latency (ms)')
         ax.set_title("Nodes Generated Messages")
-        #ax.set_zlim3d(0,100)
-        plt.gcf().set_size_inches(8,6)
+        plt.gcf().set_size_inches(8, 6)
         titulo = "Data SD = {}".format(self.getAppParticipationByNodeSD())
-        plt.legend(title=titulo,handles=[])
-        plt.savefig(tempBuffer, format = 'png')
+        plt.legend(title=titulo, handles=[])
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
-        
+
 
 class RPL(Base):
     '''
@@ -652,23 +565,23 @@ class RPL(Base):
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="rpl")
 
-    def __init__(self,metric):
+    def __init__(self, metric):
         self.metric = metric
-    
+
     def processParentSwitches(self) -> dict:
         results = {}
-        for i in range(1,(self.metric.run.maxNodes)):
+        for i in range(1, (self.metric.run.maxNodes)):
             results[str(i)] = []
         data = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "parent switch:" in rec.rawData]
-        reExp = re.compile('\((.*?)\)')
+        reExp = re.compile(r'\((.*?)\)')
         for sw in data:
             old = ':'.join(map(str, sw.rawData.split('->')[0].split(":")[1:])).strip()
             new = sw.rawData.split('->')[1].strip()
-            if reExp.search(old): 
+            if reExp.search(old):
                 old = None
             if reExp.search(new):
-                new = None            
-            results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
+                new = None
+            results[str(sw.node)].append({'time': sw.simTime, 'old': old, 'new': new})
         return results
 
     def getParentSwitches(self) -> int:
@@ -683,14 +596,14 @@ class RPL(Base):
         Return the total amount of RPL messages and the sum of each message type
         '''
         records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "sending a " in rec.rawData]
-        retorno = {'total':len(records)}
+        retorno = {'total': len(records)}
         for r in records:
             msgType = r.rawData.split(' ')[2]
             retorno.setdefault(msgType, 0)
             retorno[msgType] += 1
         return retorno
 
-    def getAverangeHops(self, slice = 300000000) -> float:
+    def getAverangeHops(self, slice=300000000) -> float:
         '''
         Return the averange RPL hops at end method extracted and adapted from: https://github.com/contiki-ng/contiki-ng/blob/develop/examples/benchmarks/rpl-req-resp/parse.py
 
@@ -700,7 +613,7 @@ class RPL(Base):
         parents = {}
         time = slice
         anterior = 0
-        endtime = self.metric.run.experiment.getTimeout() * 1000 #getTimeout is in ms * for us
+        endtime = self.metric.run.experiment.getTimeout() * 1000
         retorno = []
         while time < endtime:
             records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "links" in rec.rawData and rec.simTime > anterior and rec.simTime < time]
@@ -708,26 +621,26 @@ class RPL(Base):
             time += slice
             for rec in records:
                 if rec.recordType == "RPL" and rec.rawData.startswith("links: "):
-                    res = re.findall(isItIpv6,rec.rawData)
+                    res = re.findall(isItIpv6, rec.rawData)
                     if len(res) == 2:
-                        child = int(res[0].split(":")[-1],16)
-                        parent = int(res[1].split(":")[-1],16)
+                        child = int(res[0].split(":")[-1], 16)
+                        parent = int(res[1].split(":")[-1], 16)
                         if not child in parents:
                             parents[child] = {}
                         if not parent in parents:
                             parents[parent] = None
                         parents[child] = parent
             data = []
-            for node in range(2,(self.metric.run.maxNodes)): #Starting from 2nd node
+            for node in range(2, (self.metric.run.maxNodes)):
                 hops = 0
-                try: 
+                try:
                     while(parents[node] != None):
                         node = parents[node]
                         hops += 1
                         if hops > 50:
                             continue
                     data.append(hops)
-                except:
+                except Exception:
                     continue
             try:
                 retorno.append(statistics.mean(data))
@@ -742,47 +655,36 @@ class RPL(Base):
         retorno = []
         data = [rec for rec in self.metric.run.records if rec.recordType == "RPL"]
         for rec in data:
-            res = re.compile('.*?state: (\w*),.*? rank (\d*).*?dioint (\d*).*?nbr count (\d*)').match(rec.rawData)
+            res = re.compile(r'.*?state: (\w*),.*? rank (\d*).*?dioint (\d*).*?nbr count (\d*)').match(rec.rawData)
             if (res):
                 rank = int(res.group(2))
-                trickle = (2**int(res.group(3)))/(60*1000.)
+                trickle = (2 ** int(res.group(3))) / (60 * 1000.)
                 nbrCount = int(res.group(4))
-                retorno.append({'node': rec.node, 'rank': rank, 'trickle': trickle, "state":res.group(1)})
+                retorno.append({'node': rec.node, 'rank': rank, 'trickle': trickle, "state": res.group(1)})
         return retorno
 
     def printMetrics(self):
         '''
         Returns the boxplot of the metrics data
         '''
-        import io
-        import base64
-        import matplotlib.pyplot as plt
         c = 0
-        fig, axes = plt.subplots(figsize=(10,5),ncols=2)
+        fig, axes = plt.subplots(figsize=(10, 5), ncols=2)
         df = pd.DataFrame(self.getMetrics())
         fig.tight_layout(pad=1.5)
-
-        for i in ['trickle','rank']:
-        #dfg = df.groupby('state').sum().plot(kind='box')
-        #df.describe()
-        #ax = plt.subplot(4, 2)
-            ax = df[i].plot(kind='box', rot = 90, fontsize= '8', grid = True, title=self.metric.run.experiment.name + " - " + i, ax=axes[c])
+        for i in ['trickle', 'rank']:
+            ax = df[i].plot(kind='box', rot=90, fontsize='8', grid=True, title=self.metric.run.experiment.name + " - " + i, ax=axes[c])
             ax.set_ylim(ymin=0)
             if i == 'trickle':
                 ax.set_ylabel("Seconds")
             c += 1
         tempBuffer = io.BytesIO()
-        plt.savefig(tempBuffer, format = 'png')
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
     def printParentSwitches(self):
         data = {}
         results = self.processParentSwitches()
-        from collections import Counter
         index = 2
-        import io
-        import base64
-        import matplotlib.pyplot as plt
         plt.clf()
         for k in results:
             if k == "0" or k == "1":
@@ -791,57 +693,43 @@ class RPL(Base):
             data[index] = swCount
             index += 1
             width = 0.8
-            #plt.text(((index-1) - (width/3)), swCount-2, str(swCount), color="black", fontsize=8)
         tempBuffer = io.BytesIO()
-        plt.bar(data.keys(),data.values(), width=width, label="Parent Switches")
-        #plt.bar_label(data.values(), padding=2)
+        plt.bar(data.keys(), data.values(), width=width, label="Parent Switches")
         plt.xticks(list(data.keys()))
-        #plt.ylim([0, 100])
         plt.xlabel("Nodes")
         plt.ylabel("Parent Switches")
-        #plt.legend()
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
-    
 
-    '''
-        First attemp to get a network overview at simulation's end
-    '''
     def printNetwork(self):
-        import networkx as nx
-        import matplotlib.pyplot as plt
-        import io
-        import base64
-        import math
         tempBuffer = io.BytesIO()
         plt.clf()
         G = nx.DiGraph()
         npos = self.metric.run.getNodesPosition()
         gpos = {}
         for node in npos:
-            gpos [node] =  (npos[node]['x'],npos[node]['y'])
+            gpos[node] = (npos[node]['x'], npos[node]['y'])
         data = self.processParentSwitches()
         for i in data:
             if i == '0' and i == '1':
                 continue
             if i == '1':
-                G.add_node(str('N'+i))
+                G.add_node(str('N' + i))
                 continue
             nodeOrigin = str('N' + i)
             try:
-                nodeParent = data[i].pop()['new'] # Get the last change
+                nodeParent = data[i].pop()['new']
             except IndexError:
                 continue
             if nodeParent == None:
                 G.add_node(nodeOrigin)
                 continue
             else:
-                G.add_edge(nodeOrigin,str('N'+ str(int(nodeParent.split(":")[-1], 16))))
-        val_map = {'N1': 1.0}
+                G.add_edge(nodeOrigin, str('N' + str(int(nodeParent.split(":")[-1], 16))))
         fig, ax = plt.subplots()
-        ylm = {'min': min(npos.values(), key=lambda y:y['y'])['y'], 'max': max(npos.values(), key=lambda y:y['y'])['y']}
-        ylimit = range(math.floor(ylm['min']),math.ceil(ylm['max'])+1)
+        ylm = {'min': min(npos.values(), key=lambda y: y['y'])['y'], 'max': max(npos.values(), key=lambda y: y['y'])['y']}
+        ylimit = range(math.floor(ylm['min']), math.ceil(ylm['max']) + 1)
         plt.yticks(ylimit)
         plt.yscale("linear")
         plt.xlabel("X Position (m)")
@@ -851,72 +739,63 @@ class RPL(Base):
         nx.draw_networkx_edges(G, pos=gpos, ax=ax)
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
         ax.set_title("Nodes Parent")
-        plt.gcf().set_size_inches(8,6)
-        #plt.show()
-        #
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
-    
+
     def processAttachment(self):
         '''
         Process the Parent Switches for creating a list of tuple to compute node's attachment time in DODAG
         '''
         data = self.processParentSwitches()
-
         results = [[] for x in range(self.metric.run.maxNodes)]
         for i in data:
             for j in data[i]:
                 if j['old'] == None and j['new'] is not None:
-                    results[int(i)].append(tuple((float(j['time'])//1000,True)))
+                    results[int(i)].append(tuple((float(j['time']) // 1000, True)))
                     continue
                 if j['old'] is not None and j['new'] == None:
-                    results[int(i)].append(tuple((float(j['time'])//1000,False)))
+                    results[int(i)].append(tuple((float(j['time']) // 1000, False)))
         return results
 
-
     def printAttachment(self):
-        import matplotlib.pyplot as plt
-        import matplotlib.pyplot as plt
-        from matplotlib.lines import Line2D
-        import io
-        import base64
         tempBuffer = io.BytesIO()
         plt.clf()
         index = 2
         results = self.processAttachment()
         for i in results[2:]:
             started = 0
-            x = [0,0]
+            x = [0, 0]
             for j in i:
                 if j[1]:
-                    time = j[0]/1000
+                    time = j[0] / 1000
                     plt.plot(time, index, marker="^", color="green")
                     x[0] = time
-                    x[1] = (self.metric.run.experiment.getTimeout()/1000) #sim end without node's disconnection
+                    x[1] = (self.metric.run.experiment.getTimeout() / 1000)
                 else:
-                    time = j[0]/1000
+                    time = j[0] / 1000
                     plt.plot(time, index, marker="v", color="red")
                     x[1] = time
-                    plt.plot(x,[index,index], color="black")
-                    x = [0,0]
-            plt.plot(x,[index,index], color="black")
+                    plt.plot(x, [index, index], color="black")
+                    x = [0, 0]
+            plt.plot(x, [index, index], color="black")
             handles, labels = plt.gca().get_legend_handles_labels()
             attach = Line2D([0], [0], marker="^", color="green", label="Attached")
             detach = Line2D([0], [0], marker="v", color="red", label="Detached")
-            warm= Line2D([0], [0], label="Warm-up Time", ls=':', c='Orange')
-            handles.extend([attach,detach,warm])
-            plt.legend(handles=handles,fontsize="x-small")
-            index +=1
+            warm = Line2D([0], [0], label="Warm-up Time", ls=':', c='Orange')
+            handles.extend([attach, detach, warm])
+            plt.legend(handles=handles, fontsize="x-small")
+            index += 1
         plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (S)")
         plt.ylabel("Nodes")
-        plt.yticks(range(2,self.metric.run.maxNodes))
+        plt.yticks(range(2, self.metric.run.maxNodes))
         plt.title("Node DODAG Attach Time (RPL)")
-        plt.savefig(tempBuffer, format = 'png')
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
-    
-    def getAttachTimeByNode(self) -> list():
-        results =  self.processAttachment()
+
+    def getAttachTimeByNode(self) -> list:
+        results = self.processAttachment()
         indice = 0
         attachedTime = [[0] for x in range(self.metric.run.maxNodes)]
         for i in results:
@@ -925,12 +804,11 @@ class RPL(Base):
             tupla = 0
             if indice > 1:
                 try:
-                    ultimo,dele = i[-1]
+                    ultimo, dele = i[-1]
                 except IndexError:
-                    # The node never has attached
                     attachedTime[indice][0] = 0
                     continue
-            for tempo,isConn in i:
+            for tempo, isConn in i:
                 tupla += 1
                 if isConn is True and oldConn is False:
                     tempoCon = tempo
@@ -944,12 +822,13 @@ class RPL(Base):
                     continue
             indice += 1
         return attachedTime
-    
-    def getAttachTimeMean(self) -> float():
+
+    def getAttachTimeMean(self) -> float:
         result = self.getAttachTimeByNode()
-        result.pop(0) #//discarting the first element(0)
-        result.pop(0) #//discarting the second element(1)
+        result.pop(0)
+        result.pop(0)
         return pd.DataFrame(result).mean().to_numpy()[0]
+
 
 class MACMessage(Base):
     '''
@@ -973,7 +852,8 @@ class MACMessage(Base):
     rcvTime = 0
     isReceived = False
     isSent = False
-    def __init__(self,origin,dest,enQue,seqno,queueNBROccupied,queueNBRSize,queueGlobalOccupied,queueGlobalSize,headerLen,dataLen):
+
+    def __init__(self, origin, dest, enQue, seqno, queueNBROccupied, queueNBRSize, queueGlobalOccupied, queueGlobalSize, headerLen, dataLen):
         self.origin = origin
         self.dest = dest
         self.enQueued = enQue
@@ -984,34 +864,41 @@ class MACMessage(Base):
         self.queueGlobalSize = queueGlobalSize
         self.headerLen = headerLen
         self.dataLen = dataLen
+
     def sent(self, time, status, tx):
         self.sentTime = time
         self.status = status
         self.tries = tx
         self.isSent = True
+
     def receive(self, time):
         self.rcvTime = time
         self.isReceived = True
+
     def latency(self):
         if not self.isSent:
             raise Exception("Message didn't send")
         if not self.isReceived:
             raise Exception("Message not received")
         return self.rcvTime - self.enQueued
+
     def retransmissions(self):
         if not self.isSent:
             raise Exception("Message didn't send")
         if not self.isReceived:
             raise Exception("Message not received")
         return self.tries - 1
+
     def transmissions(self):
         if not self.isSent:
             raise Exception("Message didn't send")
         if not self.isReceived:
             raise Exception("Message not received")
         return self.tries
+
     def __str__(self) -> str:
         return "{self.origin}<->{self.dest} Q:{self.enQueued} S({self.isSent}):{self.sentTime} S({self.isReceived}):{self.rcvTime} Sq:{self.seqno}".format(self=self)
+
 
 class MAC(Base):
     '''
@@ -1023,14 +910,13 @@ class MAC(Base):
     metric = relationship("Metrics", uselist=False, back_populates="mac")
     results = Column(PickleType)
 
-    def __init__(self,metric):
+    def __init__(self, metric):
         self.metric = metric
         self.processFrames()
 
-    #@orm.reconstructor
     def processFrames(self):
         results = {}
-        for i in range(0,(self.metric.run.maxNodes)):
+        for i in range(0, (self.metric.run.maxNodes)):
             results[str(i)] = []
         results['65535'] = []
 
@@ -1041,11 +927,11 @@ class MAC(Base):
                     origin = int(rec.node)
                     dest = int(rec.rawData.split()[3].split('.')[0], 16)
                     enQueued = float(rec.simTime)
-                    seqnum = int(rec.rawData.split()[6].replace(',',''))
+                    seqnum = int(rec.rawData.split()[6].replace(',', ''))
                     queueNBROccupied = int(rec.rawData.split()[8].split('/')[0])
                     queueNBRSize = int(rec.rawData.split()[8].split('/')[1])
-                    queueGlobalOccupied = int(rec.rawData.split()[9].replace(',','').split('/')[0])
-                    queueGlobalSize = int(rec.rawData.split()[9].replace(',','').split('/')[1])
+                    queueGlobalOccupied = int(rec.rawData.split()[9].replace(',', '').split('/')[0])
+                    queueGlobalSize = int(rec.rawData.split()[9].replace(',', '').split('/')[1])
                     headerLen = int(rec.rawData.split()[11])
                     dataLen = int(rec.rawData.split()[12])
                     macMsg = MACMessage(origin, dest, enQueued, seqnum, queueNBROccupied, queueNBRSize, queueGlobalOccupied, queueGlobalSize, headerLen, dataLen)
@@ -1057,27 +943,25 @@ class MAC(Base):
                     continue
                 if rec.rawData.startswith("packet sent to"):
                     dest = int(rec.rawData.split()[3].split('.')[0], 16)
-                    seqnum = int(rec.rawData.split()[5].replace(',',''))
+                    seqnum = int(rec.rawData.split()[5].replace(',', ''))
                     sentTime = float(rec.simTime)
-                    status = int(rec.rawData.split()[7].replace(',',''))
-                    tx = int(rec.rawData.split()[9].replace(',',''))
+                    status = int(rec.rawData.split()[7].replace(',', ''))
+                    tx = int(rec.rawData.split()[9].replace(',', ''))
                     for msg in reversed(results[str(rec.node)]):
                         if msg.isSent:
                             continue
-                        if ( msg.seqno == seqnum): #and msg.dest == dest):
-                            time = sentTime - msg.enQueued 
+                        if (msg.seqno == seqnum):
+                            time = sentTime - msg.enQueued
                             if (time > 10000000):
                                 continue
                             else:
                                 msg.sent(sentTime, status, tx)
                                 if macMsg.dest == 0 or macMsg.dest == 65535:
-                                    #Broadcast message is sent by all, I cant control who receives."
-                                    # TODO: Figure out why the seqno changes
                                     msg.receive(sentTime)
                                     msg.tries = 1
                                 continue
             for rec in data:
-                if rec.rawData.startswith("received from"): 
+                if rec.rawData.startswith("received from"):
                     dest = int(rec.node)
                     origin = int(rec.rawData.split()[2].split('.')[0], 16)
                     seqnum = int(rec.rawData.split()[5])
@@ -1090,12 +974,10 @@ class MAC(Base):
                             if time < 10000000:
                                 msg.receive(rcvTime)
                                 break
-                            else:
-                                None
         else:
             data = [rec for rec in self.metric.run.records if rec.recordType == "CSMA"]
-        self.results =  results
-        
+        self.results = results
+
     def processIngress(self):
         '''
         Processes the node ingresses and returns a list containing the time of the event and the event of sync (Sync and Desync)
@@ -1104,18 +986,18 @@ class MAC(Base):
         results = [[] for x in range(self.metric.run.maxNodes)]
         for rec in data:
             if rec.rawData.startswith("leaving the network"):
-                results[int(rec.node)].append(tuple((float(rec.simTime)//1000,False)))
+                results[int(rec.node)].append(tuple((float(rec.simTime) // 1000, False)))
                 continue
             if rec.rawData.startswith("association done"):
-                results[int(rec.node)].append(tuple((float(rec.simTime)//1000, True)))
+                results[int(rec.node)].append(tuple((float(rec.simTime) // 1000, True)))
                 continue
         return results
-    
-    def getSyncTimeByNode(self) -> list():
+
+    def getSyncTimeByNode(self) -> list:
         '''
         Returns a list containing the time that each node stayed synchronised.
         '''
-        results =  self.processIngress()
+        results = self.processIngress()
         indice = 0
         syncedTime = [[0] for x in range(self.metric.run.maxNodes)]
         for i in results:
@@ -1124,12 +1006,11 @@ class MAC(Base):
             tupla = 0
             if indice > 1:
                 try:
-                    ultimo,dele = i[-1]
+                    ultimo, dele = i[-1]
                 except IndexError:
-                    # The node never has attached
                     syncedTime[indice][0] = 0
                     continue
-            for tempo,isConn in i:
+            for tempo, isConn in i:
                 tupla += 1
                 if isConn is True and oldConn is False:
                     tempoCon = tempo
@@ -1144,16 +1025,16 @@ class MAC(Base):
             indice += 1
         return syncedTime
 
-    def getSyncTimeMean(self) -> float():
+    def getSyncTimeMean(self) -> float:
         '''
         Returns mean time of nodes stayed synchronised.
         '''
         result = self.getSyncTimeByNode()
-        result.pop(0) #//discarting the first element(0)
-        result.pop(0) #//discarting the second element(1)
+        result.pop(0)
+        result.pop(0)
         return pd.DataFrame(result).mean().to_numpy()[0]
 
-    def formationTime(self) -> float():
+    def formationTime(self) -> float:
         '''
         Returns the network formation time (ms)
         In case of never had connected, raises an Exception
@@ -1168,56 +1049,48 @@ class MAC(Base):
             if rec.rawData.startswith("association done"):
                 connected += 1
                 if simNodes == connected:
-                    return float(rec.simTime)//1000
+                    return float(rec.simTime) // 1000
         return 1200
-        raise Exception("All Nodes have Never Simultaneously Connected")
 
-    
     def printIngress(self):
-        import matplotlib.pyplot as plt
-        from matplotlib.lines import Line2D
-        import io
-        import base64
         tempBuffer = io.BytesIO()
         plt.clf()
         index = 2
         results = self.processIngress()
         for i in results[2:]:
             started = 0
-            x = [0,0]
+            x = [0, 0]
             for j in i:
                 if j[1]:
-                    time = j[0]/1000
+                    time = j[0] / 1000
                     plt.plot(time, index, marker="^", color="green")
                     x[0] = time
-                    x[1] = (self.metric.run.experiment.getTimeout()/1000) #sim end without node's disconnection
+                    x[1] = (self.metric.run.experiment.getTimeout() / 1000)
                 else:
-                    time = j[0]/1000
+                    time = j[0] / 1000
                     plt.plot(time, index, marker="v", color="red")
                     x[1] = time
-                    plt.plot(x,[index,index])
-                    x = [0,0]
-            plt.plot(x,[index,index])
-            index +=1
+                    plt.plot(x, [index, index])
+                    x = [0, 0]
+            plt.plot(x, [index, index])
+            index += 1
             handles, labels = plt.gca().get_legend_handles_labels()
             attach = Line2D([0], [0], marker="^", color="green", label="TSCH Ingress")
             detach = Line2D([0], [0], marker="v", color="red", label="TSCH Disconnect")
-            warm= Line2D([0], [0], label="Warm-up Time", ls=':', c='Orange')
-            handles.extend([attach,detach,warm])
-            plt.legend(handles=handles,fontsize="x-small")
+            warm = Line2D([0], [0], label="Warm-up Time", ls=':', c='Orange')
+            handles.extend([attach, detach, warm])
+            plt.legend(handles=handles, fontsize="x-small")
         plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (S)")
         plt.ylabel("Nodes")
-        plt.yticks(range(2,self.metric.run.maxNodes))
+        plt.yticks(range(2, self.metric.run.maxNodes))
         plt.title("Node Ingress (TSCH)")
-        plt.savefig(tempBuffer, format = 'png')
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
-    def getRetransmissions(self) -> dict():
+    def getRetransmissions(self) -> dict:
         '''
         Returns the Experience retransmission metrics
-
-        :returns: dict()
         '''
         retorno = {}
         trams = []
@@ -1228,68 +1101,58 @@ class MAC(Base):
                     trams.append(m.retransmissions())
         totalRetrans = sum(trams)
         totalAckFrames = len(trams)
-        totalSuccessFrames = Counter(trams)[0] #Success = No need retrams
+        totalSuccessFrames = Counter(trams)[0]
         retorno['retransmissions'] = totalRetrans
         retorno['totalAck'] = totalAckFrames
         retorno['totalSuccessFrames'] = totalSuccessFrames
         retorno['resFrames'] = totalAckFrames - totalSuccessFrames
         try:
-            retorno['retransRate'] = retorno['resFrames']/totalRetrans
-        except:
+            retorno['retransRate'] = retorno['resFrames'] / totalRetrans
+        except Exception:
             retorno['retransRate'] = 1
         return retorno
 
     def printRetransmissions(self):
-        import io
-        import base64
-        import matplotlib.pyplot as plt
         plt.clf()
         tempBuffer = io.BytesIO()
-        for i,j in self.results.items():
-            # TODO: Process Broadcast messagens
+        for i, j in self.results.items():
             if i == '0' or i == '65535':
                 continue
-        #     print (i)
             x = []
             y = []
             for m in j:
                 if m.isReceived and m.isSent:
-                    x.append(m.sentTime/1000000)
+                    x.append(m.sentTime / 1000000)
                     y.append(m.retransmissions())
-            plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
+            plt.plot(x, y, linestyle="", marker=".", label="Node " + str(i))
         plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("# of Retransmissions")
         plt.legend()
         plt.title("Retransmissions")
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
-    
+
     def printTransmissions(self):
-        import io
-        import base64
-        import matplotlib.pyplot as plt
         plt.clf()
         tempBuffer = io.BytesIO()
-        for i,j in self.results.items():
-            # TODO: Process Broadcast messagens
+        for i, j in self.results.items():
             if i == '0' or i == '65535':
                 continue
-        #     print (i)
             x = []
             y = []
             for m in j:
                 if m.isReceived and m.isSent:
-                    x.append(m.sentTime/1000000)
+                    x.append(m.sentTime / 1000000)
                     y.append(m.retransmissions())
-            plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
+            plt.plot(x, y, linestyle="", marker=".", label="Node " + str(i))
         plt.axvline(x=int(self.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("# of Retransmissions")
         plt.legend()
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
     def getDisconnections(self):
@@ -1306,7 +1169,6 @@ class MAC(Base):
         '''
         Returns the NBR queue occupation and the variance by each node
         '''
-        import statistics
         retorno = {}
         for i in self.results.keys():
             dataset = []
@@ -1315,33 +1177,26 @@ class MAC(Base):
             queueSize = 64
             for j in self.results[i]:
                 dataset.append(j.queueNBROccupied)
-            retorno[str('N'+i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
+            retorno[str('N' + i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset) / queueSize) * 100, 'variance': statistics.variance(dataset)}
         return retorno
 
     def getNBRQueueOccupation(self):
         '''
         Returns the NBR queue mean (lenght, occupation%) and the variance
         '''
-        import statistics
-        retorno = {}
         dataset = []
-        frames = 0
-        queueOccup = 0
         queueSize = 64
         for i in self.results.keys():
             if(len(self.results[i]) == 0):
                 continue
             for j in self.results[i]:
                 dataset.append(j.queueNBROccupied)
-        retorno =  {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
-        return retorno
+        return {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset) / queueSize) * 100, 'variance': statistics.variance(dataset)}
 
     def getGlobalQueueOccupation(self):
         '''
         Returns the global queue occupation and the variance
         '''
-        import statistics
-        retorno = {}
         dataset = []
         queueSize = 64
         for i in self.results.keys():
@@ -1349,14 +1204,12 @@ class MAC(Base):
                 continue
             for j in self.results[i]:
                 dataset.append(j.queueGlobalOccupied)
-        retorno =  {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
-        return retorno
+        return {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset) / queueSize) * 100, 'variance': statistics.variance(dataset)}
 
     def getGlobalQueueOccupationByNode(self):
         '''
         Returns the global queue occupation and the variance by each node
         '''
-        import statistics
         retorno = {}
         for i in self.results.keys():
             dataset = []
@@ -1365,8 +1218,9 @@ class MAC(Base):
             queueSize = 64
             for j in self.results[i]:
                 dataset.append(j.queueGlobalOccupied)
-            retorno[str('N'+i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset)/queueSize)*100,'variance':statistics.variance(dataset)}
+            retorno[str('N' + i)] = {'length': statistics.mean(dataset), 'occupation': (statistics.mean(dataset) / queueSize) * 100, 'variance': statistics.variance(dataset)}
         return retorno
+
 
 class LinkStats(Base):
     '''
@@ -1378,14 +1232,13 @@ class LinkStats(Base):
     id = Column(Integer, primary_key=True)
     metric = relationship("Metrics", uselist=False, back_populates="linkstats")
 
-    
-    def __init__(self,metric):
+    def __init__(self, metric):
         self.metric = metric
 
     def getNodesPDR(self) -> dict:
         nodesStats = {}
         for n in range(self.metric.run.maxNodes):
-            nodesStats[n] = {"tx": 0, "ack":0}
+            nodesStats[n] = {"tx": 0, "ack": 0}
         data = [rec for rec in self.metric.run.records if rec.recordType == "Link Stats"]
         for rec in data:
             tx = int(rec.rawData.split()[2].split("=")[1])
@@ -1402,43 +1255,36 @@ class LinkStats(Base):
             total = total + nodesStats[n]['tx']
             totalAck = totalAck + nodesStats[n]['ack']
         try:
-            pdr = round((totalAck/total)*100,2)
+            pdr = round((totalAck / total) * 100, 2)
         except ZeroDivisionError:
             pdr = 0
-        return {'PDR': pdr, 'tx' :total, 'ack': totalAck}
+        return {'PDR': pdr, 'tx': total, 'ack': totalAck}
 
     def printPDR(self):
-        data = {}
-        import matplotlib.pyplot as plt
-        import io
-        import base64
-        tempBuffer = io.BytesIO()
         plt.clf()
         data = {}
         index = 2
-        for i,j in self.getNodesPDR().items():
+        for i, j in self.getNodesPDR().items():
             if i < index:
                 continue
             try:
-                pdr = round((j['ack'] * 100 )/j['tx'],2)
+                pdr = round((j['ack'] * 100) / j['tx'], 2)
             except ZeroDivisionError:
                 pdr = 0
             data[index] = pdr
             index += 1
             width = 0.8
-            #plt.text(((index-1) - (width/3)), pdr-2, str(pdr), color="black", fontsize=8)
         tempBuffer = io.BytesIO()
-        plt.bar(data.keys(),data.values(), width=width, label="Link Status PDR")
-        #plt.bar_label(data.values(), padding=2)
+        plt.bar(data.keys(), data.values(), width=width, label="Link Status PDR")
         plt.xticks(list(data.keys()))
         plt.ylim([0, 100])
         plt.xlabel("Nodes")
         plt.ylabel("PDR (%)")
-        #plt.legend()
         plt.title("Link-level PDR by node")
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
+
 
 class PDR(Base):
     __tablename__ = 'pdrs'
@@ -1448,7 +1294,6 @@ class PDR(Base):
     def __init__(self, application) -> None:
         self.application = application
 
-
     def processResults(self):
         results = [[] for x in range(self.application.metric.run.maxNodes)]
         for rec in self.application.records:
@@ -1457,117 +1302,99 @@ class PDR(Base):
             else:
                 results[rec.srcNode].append(False)
         return results
-    
+
     def getGlobalPDR(self):
         totalTrue = 0
         totalFalse = 0
-        from collections import Counter
         for i in self.processResults():
             node = Counter(i)
             totalTrue += node[True]
             totalFalse += node[False]
         try:
-            return (round(totalTrue/(totalFalse+totalTrue)*100,2))
-        except ZeroDivisionError: # Happens when the node never ingress in TSCH
+            return (round(totalTrue / (totalFalse + totalTrue) * 100, 2))
+        except ZeroDivisionError:
             return 0.0
 
     def printPDR(self):
         data = {}
         results = self.processResults()
-        from collections import Counter
         index = 2
         totalGlobal = 0
         trueGlobal = 0
-        import io
-        import base64
-        import matplotlib.pyplot as plt
         plt.clf()
-        for i in results[2:]: # The first is the sink node
+        for i in results[2:]:
             node = Counter(i)
             total = node[True] + node[False]
             totalGlobal += total
             trueGlobal += node[True]
             try:
-                pdr = round((node[True]/total)*100,2)
-            except ZeroDivisionError: # Happens when the node never ingress in TSCH
+                pdr = round((node[True] / total) * 100, 2)
+            except ZeroDivisionError:
                 pdr = 0
-            #print ("Node" , index ,"Total: " , total, " False: ", node[False])
-            #print ("PDR: " , pdr,"%")
             data[index] = pdr
             index += 1
             width = 0.8
-            #plt.text(((index-1) - (width/3)), pdr-2, str(pdr), color="black", fontsize=8)
-        #print ("PDR Global: ",round((node[True]/total)*100,2))
         tempBuffer = io.BytesIO()
-        plt.bar(data.keys(),data.values(), width=width, label="PDR")
-        #plt.bar_label(data.values(), padding=2)
+        plt.bar(data.keys(), data.values(), width=width, label="PDR")
         plt.xticks(list(data.keys()))
         plt.ylim([0, 100])
         plt.xlabel("Nodes")
         plt.ylabel("PDR (%)")
         plt.title("Application PDR by node")
-        #plt.legend()
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
-        return base64.b64encode(tempBuffer.getvalue()).decode() 
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
+        return base64.b64encode(tempBuffer.getvalue()).decode()
+
 
 class Latency(Base):
     __tablename__ = 'latencies'
     id = Column(Integer, primary_key=True)
-    #application_id = Column(Integer, ForeignKey('application.id')) # The ForeignKey must be the physical ID, not the Object.id
-    application = relationship("Application", uselist=False, back_populates="latency") 
-    def __init__(self,application) -> None:
+    application = relationship("Application", uselist=False, back_populates="latency")
+
+    def __init__(self, application) -> None:
         self.application = application
 
     def getNodes(self):
         nodes = []
         for i in range(self.application.metric.run.maxNodes):
             nodes.append(list())
-            #print(len(self.nodes))
         for i in self.application.records:
             if (i.rcv):
-                nodes[i.srcNode].append(tuple((i.genTime/1000, i.getLatency()/float(1000))))
+                nodes[i.srcNode].append(tuple((i.genTime / 1000, i.getLatency() / float(1000))))
         return nodes
 
     def latencyMean(self):
-        from numpy import mean
         nodes = self.getNodes()
         values = []
         for register in nodes:
             for value in register:
                 values.append(value[1])
-        globalMean = round(mean(values),3)
-        return globalMean
+        return round(np.mean(values), 3)
 
     def latencyMedian(self):
-        from numpy import median
         nodes = self.getNodes()
         values = []
         for register in nodes:
             for value in register:
                 values.append(value[1])
-        globalMedian = round(median(values),3)
-        return globalMedian
+        return round(median(values), 3)
 
     def getLatencyDataByNode(self):
         myData = {}
-        for i in range(2,(self.application.metric.run.maxNodes)):
+        for i in range(2, (self.application.metric.run.maxNodes)):
             myData['N' + str(i)] = []
         for rec in self.application.records:
             if rec.rcv:
-                myData['N' + str(rec.srcNode)].append(rec.getLatency()/float(1000))
+                myData['N' + str(rec.srcNode)].append(rec.getLatency() / float(1000))
         return myData
 
     def getLatencyMedianByNode(self):
         retorno = {}
-        for k,v in self.application.latency.getLatencyDataByNode().items():
+        for k, v in self.application.latency.getLatencyDataByNode().items():
             retorno[k] = median(v)
         return retorno
 
     def printLatencyByNode(self):
-        import io
-        import base64
-        import matplotlib.pyplot as plt
         plt.clf()
         tempBuffer = io.BytesIO()
         myData = self.getLatencyDataByNode()
@@ -1575,19 +1402,11 @@ class Latency(Base):
         plt.boxplot(data)
         plt.xticks(range(1, len(labels) + 1), labels)
         plt.title("Latency (ms)")
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
-        #plt.show()
-    
+
     def printLatencyByNodesPosition(self):
-        from mpl_toolkits.mplot3d import Axes3D
-        import matplotlib.pyplot as plt
-        import io
-        import base64
-        from numpy import mean
-        import matplotlib.cm as cm
-        import numpy as np
         tempBuffer = io.BytesIO()
         plt.clf()
         nodes = []
@@ -1602,64 +1421,53 @@ class Latency(Base):
             x.append(position['x'])
             y.append(position['y'])
             try:
-                if latData[node] == []: #No Latency Data
+                if latData[node] == []:
                     z.append(0)
-                    ax.text(position['x'],position['y']+5, 0, "No Data", )
+                    ax.text(position['x'], position['y'] + 5, 0, "No Data")
                 else:
-                    z.append(mean(latData[node]))
-                    #ax.text(position['x'],position['y']+5, mean(latData[node]), mean(latData[node]) )
-            except:
-                # Node 1
+                    z.append(np.mean(latData[node]))
+            except Exception:
                 z.append(0)
-        #ax.scatter(x, y, z, c='b', marker='o')
-        cmap = cm.get_cmap('rainbow')
-        max_height = np.max(z)   # get range of colorbars
+        cmap = plt.cm.rainbow
+        max_height = np.max(z)
         min_height = np.min(z)
-        # scale each z to [0,1], and get their rgb values
-        rgba = [cmap((k-min_height)/max_height) for k in z]
+        rgba = [cmap((k - min_height) / max_height) for k in z]
         ax.bar3d(x, y, 0, 2, 2, z, color=rgba)
         i = 0
         for label in nodes:
-            ax.text(x[i],y[i]+2,z[i], label)
+            ax.text(x[i], y[i] + 2, z[i], label)
             i += 1
         colourMap = plt.cm.ScalarMappable(cmap=plt.cm.rainbow)
         colourMap.set_array(z)
-        colBar = plt.colorbar(colourMap).set_label('Latency (ms)')
+        plt.colorbar(colourMap).set_label('Latency (ms)')
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
-        #ax.set_zlabel('Latency (ms)')
         ax.set_title("Nodes latency (Mean)")
-        #ax.set_zlim3d(0,100)
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
-
     def printLatency(self):
-        import io
-        import base64
-        import matplotlib.pyplot as plt
         plt.clf()
         tempBuffer = io.BytesIO()
         nodes = self.getNodes()
-        for i in range(2,self.application.metric.run.maxNodes):
-            x = [a[0]/1000 for a in nodes[i]] # Seconds
-            y = [round(a[1],3) for a in nodes[i]] # Miliseconds
-            plt.plot(x, y,linestyle="",marker=".", label = "Node "+str(i))
-        # TODO: Adjust ALL latency units to ms
+        for i in range(2, self.application.metric.run.maxNodes):
+            x = [a[0] / 1000 for a in nodes[i]]
+            y = [round(a[1], 3) for a in nodes[i]]
+            plt.plot(x, y, linestyle="", marker=".", label="Node " + str(i))
         myMean = self.latencyMean()
         myMedian = self.latencyMedian()
-        plt.axhline(y = myMean, color = 'r', linestyle = '--',label="Mean: " + str(myMean) +' ms')
-        plt.axhline(y = myMedian, color = 'g', linestyle = '--',label="Median: " + str(myMedian) +' ms')
+        plt.axhline(y=myMean, color='r', linestyle='--', label="Mean: " + str(myMean) + ' ms')
+        plt.axhline(y=myMedian, color='g', linestyle='--', label="Median: " + str(myMedian) + ' ms')
         plt.axvline(x=int(self.application.metric.run.parameters['APP_WARM_UP_PERIOD_SEC']), label="Warm-up Time", ls=':', c='Orange')
         plt.xlabel("Simulation Time (s)")
         plt.ylabel("Latency (ms)")
         plt.legend()
         plt.title("Application Latency")
-        #plt.show()
-        plt.gcf().set_size_inches(8,6)
-        plt.savefig(tempBuffer, format = 'png')
+        plt.gcf().set_size_inches(8, 6)
+        plt.savefig(tempBuffer, format='png')
         return base64.b64encode(tempBuffer.getvalue()).decode()
+
 
 class AppRecord(Base):
     __tablename__ = 'apprecords'
@@ -1670,7 +1478,7 @@ class AppRecord(Base):
     srcNode = Column(Integer, nullable=False)
     dstNode = Column(Integer, nullable=False)
     sqnNumb = Column(Integer, nullable=False)
-    application_id = Column(Integer, ForeignKey('application.id')) # The ForeignKey must be the physical ID, not the Object.id
+    application_id = Column(Integer, ForeignKey('application.id'))
     application = relationship("Application", back_populates="records")
 
     def __init__(self, genTime, srcNode, dstNode, sqnNumb):
@@ -1687,6 +1495,7 @@ class AppRecord(Base):
     def getLatency(self):
         return self.rcvTime - self.genTime
 
+
 class Energy(Base):
     '''
     Energy-related Metrics
@@ -1696,54 +1505,45 @@ class Energy(Base):
     metric = relationship("Metrics", uselist=False, back_populates="energy")
     results = Column(MutableList.as_mutable(PickleType))
 
-    def __init__(self,metric):
+    def __init__(self, metric):
         self.metric = metric
         self.results = []
         self.processEnergy()
 
     def getChannelUtilization(self):
         '''
-            The Energest module reports a period each 60 seconds 
-            :return: float
+        The Energest module reports a period each 60 seconds
         '''
         return pd.DataFrame(self.results).set_index('time')['channel-utilization'].mean()
-    
-    def getRadioDutyCicle(self):
-        '''
-            Returns the
-            :return: float
-        '''
 
+    def getRadioDutyCicle(self):
         return pd.DataFrame(self.results).set_index('time')['duty-cycle'].mean()
 
     def parseEnergest(self, log):
         '''
         method extracted from: https://github.com/contiki-ng/contiki-ng/blob/develop/examples/benchmarks/rpl-req-resp/parse.py
         '''
-        res = re.compile('Radio Tx\s*:\s*(\d*)/\s*(\d+)').match(log)
+        res = re.compile(r'Radio Tx\s*:\s*(\d*)/\s*(\d+)').match(log)
         if res:
             tx = float(res.group(1))
             total = float(res.group(2))
-            return {'channel-utilization': 100.*tx/total }
-        res = re.compile('Radio total\s*:\s*(\d*)/\s*(\d+)').match(log)
+            return {'channel-utilization': 100. * tx / total}
+        res = re.compile(r'Radio total\s*:\s*(\d*)/\s*(\d+)').match(log)
         if res:
             radio = float(res.group(1))
             total = float(res.group(2))
-            return {'duty-cycle': 100.*radio/total }
+            return {'duty-cycle': 100. * radio / total}
         return None
 
-
-    #@orm.reconstructor
     def processEnergy(self):
         records = [rec for rec in self.metric.run.records if rec.recordType == "Energest"]
         for rec in records:
-            #if rec.recordType == "Energest": # No need because
             parsing = self.parseEnergest(rec.rawData)
-            if parsing != None:
+            if parsing is not None:
                 parsing['time'] = rec.simTime
-                self.results.append(parsing)    
+                self.results.append(parsing)
 
-Experiment.runs = relationship("Run", order_by = Run.id, back_populates="experiment")
-Run.records = relationship("Record", order_by = Record.id, back_populates="run")
-#Application.records = relationship("AppRecord", order_by = AppRecord.id, back_populates="application")
+
+Experiment.runs = relationship("Run", order_by=Run.id, back_populates="experiment")
+Run.records = relationship("Record", order_by=Record.id, back_populates="run")
 meta.create_all(engine)

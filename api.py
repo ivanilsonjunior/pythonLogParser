@@ -1,20 +1,20 @@
-# app.py
-from os import name
+import re
+import os
 import threading
-from flask import Flask, render_template, send_file, Response, abort, jsonify, request, url_for, redirect, logging
-from sqlalchemy.sql import text
-# Para o upload de arquivos
+
+from flask import Flask, render_template, Response, jsonify, request, redirect
 from werkzeug.utils import secure_filename
-# Para a autenticação
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
-# Experiments Models
-from Model import *
+
+from Model import db, Experiment, Run, Metrics, DBName, memConnection, memEngine, engine
 
 auth = HTTPBasicAuth()
 
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "letmein")
+
 users = {
-    "admin": generate_password_hash("letmein")
+    "admin": generate_password_hash(ADMIN_PASSWORD)
 }
 
 @auth.verify_password
@@ -56,22 +56,22 @@ def getProgress():
     progress = 0
     toEnd = 999999999
     with open("COOJA.log", "r") as f:
-            for line in f.readlines():
-                try:
-                    data = line.split('-')[1].strip()
-                except IndexError:
-                    continue
-                if data.startswith('Script timeout in'):
-                    isRun = True
-                if data.find('completed') != -1:
-                        exp = re.compile('(\d+.\d+|\d+)% completed,\s+(\d+.\d+|\d+) sec remaining').match(data)
-                        progress = int(float(exp.group(1)))
-                        toEnd = exp.group(2)
-                if data.startswith('Timeout'):
-                    toEnd = 0
-                    progress = 100
-                if data.startswith('TEST OK'):
-                    isRun = False
+        for line in f.readlines():
+            try:
+                data = line.split('-')[1].strip()
+            except IndexError:
+                continue
+            if data.startswith('Script timeout in'):
+                isRun = True
+            if data.find('completed') != -1:
+                exp = re.compile(r'(\d+.\d+|\d+)% completed,\s+(\d+.\d+|\d+) sec remaining').match(data)
+                progress = int(float(exp.group(1)))
+                toEnd = exp.group(2)
+            if data.startswith('Timeout'):
+                toEnd = 0
+                progress = 100
+            if data.startswith('TEST OK'):
+                isRun = False
     log = len(open('COOJA.testlog').readlines())
     status = {'run': isRun, 'progress': progress, 'doneIn': toEnd, 'logFile': log}
     return jsonify(status)
@@ -81,9 +81,8 @@ def getProgress():
 def extractMetricFromRun(id):
     run = db.query(Run).filter_by(id=id).first()
     run.metric = Metrics(run)
-    #db.save(run)
     db.commit()
-    return render_template("runDetail.html", run=run , user=auth.current_user())
+    return render_template("runDetail.html", run=run, user=auth.current_user())
 
 @app.route('/experiment/add/', methods=['GET'])
 @auth.login_required
@@ -91,13 +90,13 @@ def showExperimentAdd():
     experiments = db.query(Experiment).all()
     qtd = len(experiments)
     return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user())
-    
+
 @app.route('/experiment/add/', methods=['POST'])
 @auth.login_required
 def executeExperimentAdd():
     expName = request.form['expName']
     expFile = request.form['expFile']
-    exp = Experiment(name=expName,experimentFile=expFile)
+    exp = Experiment(name=expName, experimentFile=expFile)
     db.add(exp)
     db.commit()
     experiments = db.query(Experiment).all()
@@ -109,7 +108,7 @@ def detailRun(id):
     run = db.query(Run).filter_by(id=id).first()
     hasMetric = False
     if run.metric is None:
-       hasMetric = True
+        hasMetric = True
     return render_template("runDetail.html", run=run, hasMetric=hasMetric)
 
 @app.route('/run/summary/<id>')
@@ -124,7 +123,7 @@ def metricBySlotFrame(size):
     for r in runs:
         parameters = r.parameters
         if parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == size:
-            retorno.append(r)    
+            retorno.append(r)
     return render_template("metricSlotFrame.html", id=size, retorno=retorno)
 
 @app.route('/metrics/sendrate/<interval>')
@@ -134,25 +133,24 @@ def metricBySendInterval(interval):
     for r in runs:
         parameters = r.parameters
         if parameters['APP_SEND_INTERVAL_SEC'] == interval:
-            retorno.append(r)    
+            retorno.append(r)
     return render_template("metricSentInterval.html", id=interval, retorno=retorno)
 
 @app.route('/admin/db/show', methods=['GET'])
 @auth.login_required
 def showDB():
-    import sqlite3
     global engine
-    print ("Engine:", engine)
+    print("Engine:", engine)
     exp = db.query(Experiment).all()
     qtd = len(exp)
-    return render_template("index.html", count=qtd, experiments=exp)   
+    return render_template("index.html", count=qtd, experiments=exp)
 
 @app.route('/admin/db/switch', methods=['GET'])
 @auth.login_required
 def switchDB():
     import sqlite3
     global engine
-    print ("Engine:", engine)
+    print("Engine:", engine)
     exp = db.query(Experiment).all()
     qtd = len(exp)
     fisico = sqlite3.connect(DBName)
