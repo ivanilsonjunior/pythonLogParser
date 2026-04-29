@@ -57,9 +57,10 @@
       </div>
       <div class="container">
           <h3>Runs</h3>
-          <form method="get" action="run/{{exp.id}}">
-            <button type="submit">New Run</button>
-        </form>
+          <form method="get" action="run/{{exp.id}}" class="d-inline">
+            <button type="submit" class="btn btn-primary btn-sm">New Run</button>
+          </form>
+          <a href="/experiment/bulk/{{exp.id}}" class="btn btn-warning btn-sm ml-2">Bulk Run</a>
        <ul id="myUL">
           {% for run in exp.runs %}
           <ul id="myUL">

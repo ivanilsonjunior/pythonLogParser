@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Bulk Run Progress</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      .status-label { font-size: 1.1rem; }
+      #error-box { display: none; }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">My Experiments</a>
+      <span class="navbar-text text-white ml-3">Bulk Run — Progresso</span>
+    </nav>
+
+    <div class="container mt-4">
+
+      <div class="card mb-4">
+        <div class="card-header">Progresso geral</div>
+        <div class="card-body">
+          <p class="status-label">Simulação <strong><span id="current">0</span></strong> de <strong><span id="total">?</span></strong></p>
+          <div class="progress mb-2" style="height:24px">
+            <div id="overall-bar" class="progress-bar bg-success" role="progressbar"
+                 style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header">Simulação atual (Cooja)</div>
+        <div class="card-body">
+          <p class="status-label">Restam aprox. <strong><span id="sim-remaining">—</span></strong> segundos</p>
+          <div class="progress" style="height:24px">
+            <div id="sim-bar" class="progress-bar" role="progressbar"
+                 style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="error-box" class="alert alert-danger"></div>
+
+      <div id="done-box" style="display:none">
+        <div class="alert alert-success">Bulk Run concluído!</div>
+        <a id="exp-link" href="#" class="btn btn-primary">Ver experimento</a>
+        <a href="/" class="btn btn-secondary ml-2">Início</a>
+      </div>
+    </div>
+
+    <script>
+      var interval = setInterval(poll, 3000);
+
+      function poll() {
+        $.getJSON('/experiment/bulk/progress/status').done(function(data) {
+          var total = data.total || 0;
+          var current = data.current || 0;
+          var overallPct = total > 0 ? Math.round((current / total) * 100) : 0;
+
+          $('#current').text(current);
+          $('#total').text(total);
+          $('#overall-bar').css('width', overallPct + '%').attr('aria-valuenow', overallPct).text(overallPct + '%');
+
+          var simPct = data.sim_progress || 0;
+          var simRem = data.sim_to_end !== undefined && data.sim_to_end !== 0 ? data.sim_to_end : '—';
+          $('#sim-bar').css('width', simPct + '%').attr('aria-valuenow', simPct).text(simPct + '%');
+          $('#sim-remaining').text(simRem);
+
+          if (data.error) {
+            $('#error-box').text('Erro: ' + data.error).show();
+            clearInterval(interval);
+            return;
+          }
+
+          if (!data.running && current > 0) {
+            clearInterval(interval);
+            var expId = data.experiment_id;
+            $('#exp-link').attr('href', '/experiment/' + expId);
+            $('#done-box').show();
+          }
+        }).fail(function() {
+          clearInterval(interval);
+        });
+      }
+
+      poll();
+    </script>
+  </body>
+</html>

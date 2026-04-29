@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Bulk Run - {{ exp.name }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+    <style>
+      .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .tag { display: inline-flex; align-items: center; background: #007bff; color: #fff;
+             border-radius: 4px; padding: 2px 8px; font-size: .875rem; }
+      .tag button { background: none; border: none; color: #fff; margin-left: 6px;
+                    cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; }
+      .sim-count { font-weight: bold; color: #007bff; }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">My Experiments</a>
+      <span class="navbar-text text-white ml-3">Bulk Run — {{ exp.name }}</span>
+    </nav>
+
+    <div class="container mt-4">
+      {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+      {% endif %}
+
+      <div class="card mb-3">
+        <div class="card-header">Experimento</div>
+        <div class="card-body">
+          <p class="mb-0"><strong>ID:</strong> {{ exp.id }} &nbsp; <strong>Nome:</strong> {{ exp.name }}</p>
+          <p class="mb-0"><strong>Arquivo:</strong> {{ exp.experimentFile }}</p>
+        </div>
+      </div>
+
+      <form method="POST" action="" id="bulkForm">
+        <!-- Hidden fields that carry the comma-separated values -->
+        <input type="hidden" name="slotframe_values" id="slotframe_values">
+        <input type="hidden" name="send_interval_values" id="send_interval_values">
+
+        <div class="card mb-3">
+          <div class="card-header">TSCH_SCHEDULE_CONF_DEFAULT_LENGTH</div>
+          <div class="card-body">
+            <div class="input-group">
+              <input type="number" id="sf_input" class="form-control" placeholder="ex: 5" min="1">
+              <div class="input-group-append">
+                <button type="button" class="btn btn-outline-primary" onclick="addTag('sf')">Adicionar</button>
+              </div>
+            </div>
+            <div class="tag-list" id="sf_tags"></div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header">APP_SEND_INTERVAL_SEC</div>
+          <div class="card-body">
+            <div class="input-group">
+              <input type="number" id="si_input" class="form-control" placeholder="ex: 3" min="1">
+              <div class="input-group-append">
+                <button type="button" class="btn btn-outline-primary" onclick="addTag('si')">Adicionar</button>
+              </div>
+            </div>
+            <div class="tag-list" id="si_tags"></div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header">APP_WARM_UP_PERIOD_SEC</div>
+          <div class="card-body">
+            <input type="number" name="warm_up" id="warm_up" class="form-control" value="300" min="0" style="max-width:160px">
+            <small class="text-muted">Período de aquecimento em segundos (padrão: 300)</small>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header">Repetições por combinação</div>
+          <div class="card-body">
+            <input type="number" name="repetitions" id="repetitions" class="form-control" value="1" min="1" style="max-width:120px">
+          </div>
+        </div>
+
+        <p>Total de simulações: <span class="sim-count" id="sim_total">0</span></p>
+
+        <button type="submit" class="btn btn-success" id="submitBtn" disabled>Iniciar Bulk Run</button>
+        <a href="/experiment/{{ exp.id }}" class="btn btn-secondary ml-2">Cancelar</a>
+      </form>
+    </div>
+
+    <script>
+      const sfValues = [];
+      const siValues = [];
+
+      function addTag(type) {
+        const input = document.getElementById(type === 'sf' ? 'sf_input' : 'si_input');
+        const val = input.value.trim();
+        if (!val) return;
+        const arr = type === 'sf' ? sfValues : siValues;
+        if (arr.includes(val)) { input.value = ''; return; }
+        arr.push(val);
+        input.value = '';
+        renderTags(type);
+        updateCount();
+      }
+
+      function removeTag(type, val) {
+        const arr = type === 'sf' ? sfValues : siValues;
+        const idx = arr.indexOf(val);
+        if (idx !== -1) arr.splice(idx, 1);
+        renderTags(type);
+        updateCount();
+      }
+
+      function renderTags(type) {
+        const arr = type === 'sf' ? sfValues : siValues;
+        const container = document.getElementById(type === 'sf' ? 'sf_tags' : 'si_tags');
+        container.innerHTML = arr.map(v =>
+          `<span class="tag">${v}<button type="button" onclick="removeTag('${type}','${v}')">&times;</button></span>`
+        ).join('');
+      }
+
+      function updateCount() {
+        const reps = parseInt(document.getElementById('repetitions').value) || 0;
+        const total = sfValues.length * siValues.length * reps;
+        document.getElementById('sim_total').textContent = total;
+        document.getElementById('submitBtn').disabled = (total === 0);
+      }
+
+      document.getElementById('repetitions').addEventListener('input', updateCount);
+
+      // Allow Enter key on inputs
+      ['sf_input', 'si_input'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', e => {
+          if (e.key === 'Enter') { e.preventDefault(); addTag(id === 'sf_input' ? 'sf' : 'si'); }
+        });
+      });
+
+      document.getElementById('bulkForm').addEventListener('submit', function() {
+        document.getElementById('slotframe_values').value = sfValues.join(',');
+        document.getElementById('send_interval_values').value = siValues.join(',');
+      });
+    </script>
+  </body>
+</html>

@@ -10,6 +10,7 @@ import random
 import statistics
 import itertools
 import subprocess
+import time
 
 from collections import Counter
 from xml.dom import minidom
@@ -33,6 +34,16 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_
 
 from Runner import Runner
 
+
+bulk_status = {'running': False, 'current': 0, 'total': 0, 'experiment_id': None, 'error': None}
+
+def _wait_for_testlog(path="COOJA.testlog", timeout=120):
+    """Block until COOJA.testlog appears or timeout (seconds) is reached."""
+    deadline = time.time() + timeout
+    while not os.path.exists(path):
+        if time.time() > deadline:
+            raise TimeoutError(f"'{path}' não foi criado após {timeout}s")
+        time.sleep(2)
 
 DBName = "Metrics.db"
 fileEngine = create_engine('sqlite:///' + DBName, connect_args={'check_same_thread': False}, echo=False)
@@ -72,6 +83,7 @@ class Experiment(Base):
         newRun.start = datetime.now()
         try:
             runner.run()
+            _wait_for_testlog()
             newRun.end = datetime.now()
             newRun.processRun()
             newRun.parameters = newRun.getParameters()
@@ -105,9 +117,11 @@ class Experiment(Base):
         '''
         keys, values = zip(*dictVariations.items())
         permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
+        bulk_status['total'] = len(permutations_dicts) * repetitions
+        bulk_status['current'] = 0
+        bulk_status['running'] = True
+        bulk_status['error'] = None
         for i in permutations_dicts:
-            for k in i.keys():
-                self.confFile.defines[k] = i[k]
             if os.path.isdir("temp"):
                 shutil.rmtree("temp")
             os.mkdir("temp")
@@ -115,13 +129,19 @@ class Experiment(Base):
             shutil.copy("coojalogger.js", "temp")
             shutil.copy("Makefile", "temp")
             shutil.copy("node.c", "temp")
-            self.confFile.save("temp/project-conf.h")
+            shutil.copy("project-conf.h", "temp/project-conf.h")
+            overrides = {**self.confFile.defines, **i}
+            with open("temp/project-conf.h", "a") as f:
+                f.write("\n/* bulk run overrides */\n")
+                for k, v in overrides.items():
+                    f.write(f"#undef {k}\n#define {k} {v}\n")
             with open('temp/Makefile', 'r') as file:
                 filedata = file.read()
                 filedata = filedata.replace('../..', '../../..')
             with open('temp/Makefile', 'w') as file:
                 file.write(filedata)
             for run in range(repetitions):
+                bulk_status['current'] += 1
                 simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
                 rand = simFile.xpath("//randomseed")[0]
                 rand.text = str(random.randint(0, 65535))
@@ -133,6 +153,7 @@ class Experiment(Base):
                 newRun.start = datetime.now()
                 try:
                     runner.run()
+                    _wait_for_testlog()
                     newRun.end = datetime.now()
                     newRun.processRun()
                     newRun.parameters = newRun.getBulkParameters()
@@ -143,7 +164,10 @@ class Experiment(Base):
                     newRun.metric.application.process()
                 except Exception as ex:
                     print(ex)
+                    bulk_status['running'] = False
+                    bulk_status['error'] = str(ex)
                     return "Error"
+        bulk_status['running'] = False
 
     def toCsv(self, filename):
         '''
@@ -355,7 +379,7 @@ class ProjectConfFile(Base):
     defines = Column(MutableDict.as_mutable(PickleType))
 
     def __init__(self):
-        defines = {}
+        self.defines = {}
 
     def getFileContents(self):
         content = ""
@@ -667,9 +691,17 @@ class RPL(Base):
         '''
         Returns the boxplot of the metrics data
         '''
+        tempBuffer = io.BytesIO()
+        df = pd.DataFrame(self.getMetrics())
+        if df.empty or not {'trickle', 'rank'}.issubset(df.columns):
+            plt.figure(figsize=(6, 2))
+            plt.text(0.5, 0.5, 'No RPL metrics data', ha='center', va='center', fontsize=12)
+            plt.axis('off')
+            plt.savefig(tempBuffer, format='png')
+            plt.close()
+            return base64.b64encode(tempBuffer.getvalue()).decode()
         c = 0
         fig, axes = plt.subplots(figsize=(10, 5), ncols=2)
-        df = pd.DataFrame(self.getMetrics())
         fig.tight_layout(pad=1.5)
         for i in ['trickle', 'rank']:
             ax = df[i].plot(kind='box', rot=90, fontsize='8', grid=True, title=self.metric.run.experiment.name + " - " + i, ax=axes[c])
@@ -677,8 +709,8 @@ class RPL(Base):
             if i == 'trickle':
                 ax.set_ylabel("Seconds")
             c += 1
-        tempBuffer = io.BytesIO()
         plt.savefig(tempBuffer, format='png')
+        plt.close(fig)
         return base64.b64encode(tempBuffer.getvalue()).decode()
 
     def printParentSwitches(self):

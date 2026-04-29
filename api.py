@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from Model import db, Session, Experiment, Run, Metrics, DBName, memConnection, memEngine, engine
+from Model import db, Session, Experiment, Run, Metrics, ProjectConfFile, DBName, memConnection, memEngine, engine, bulk_status
 
 auth = HTTPBasicAuth()
 
@@ -117,6 +117,91 @@ def executeExperimentAdd():
     qtd = len(experiments)
     csc_files = sorted(f for f in os.listdir('.') if f.endswith('.csc'))
     return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user(), csc_files=csc_files)
+
+@app.route('/experiment/bulk/<id>', methods=['GET'])
+@auth.login_required
+def showBulkRun(id):
+    exp = db.query(Experiment).filter_by(id=id).first()
+    return render_template("bulkRun.html", exp=exp, user=auth.current_user())
+
+@app.route('/experiment/bulk/<id>', methods=['POST'])
+@auth.login_required
+def executeBulkRun(id):
+    slotframe_raw = request.form.get('slotframe_values', '')
+    send_interval_raw = request.form.get('send_interval_values', '')
+    repetitions = int(request.form.get('repetitions', 1))
+    warm_up = request.form.get('warm_up', '300').strip()
+
+    slotframe_values = [v.strip() for v in slotframe_raw.split(',') if v.strip()]
+    send_interval_values = [v.strip() for v in send_interval_raw.split(',') if v.strip()]
+
+    exp = db.query(Experiment).filter_by(id=id).first()
+
+    if not slotframe_values or not send_interval_values:
+        return render_template("bulkRun.html", exp=exp, user=auth.current_user(),
+                               error="Informe ao menos um valor para cada parâmetro.")
+
+    if exp.confFile is None:
+        conf = ProjectConfFile()
+        conf.defines = {}
+        exp.confFile = conf
+        db.add(conf)
+        db.commit()
+
+    exp.confFile.defines['APP_WARM_UP_PERIOD_SEC'] = warm_up
+    db.commit()
+
+    dictVariations = {
+        'TSCH_SCHEDULE_CONF_DEFAULT_LENGTH': slotframe_values,
+        'APP_SEND_INTERVAL_SEC': send_interval_values,
+    }
+    bulk_status['experiment_id'] = id
+
+    def run():
+        exp = db.query(Experiment).filter_by(id=id).first()
+        exp.bulkRun(dictVariations, repetitions)
+
+    process = threading.Thread(target=run)
+    process.start()
+    return redirect('/experiment/bulk/progress')
+
+@app.route('/experiment/bulk/progress', methods=['GET'])
+@auth.login_required
+def showBulkProgress():
+    return render_template("bulkProgress.html", user=auth.current_user())
+
+@app.route('/experiment/bulk/progress/status', methods=['GET'])
+@auth.login_required
+def getBulkProgress():
+    sim_progress = 0
+    sim_to_end = 0
+    if os.path.exists('COOJA.log'):
+        try:
+            with open('COOJA.log', 'r') as f:
+                for line in f.readlines():
+                    try:
+                        data = line.split('-')[1].strip()
+                    except IndexError:
+                        continue
+                    if data.find('completed') != -1:
+                        m = re.compile(r'(\d+.\d+|\d+)% completed,\s+(\d+.\d+|\d+) sec remaining').match(data)
+                        if m:
+                            sim_progress = int(float(m.group(1)))
+                            sim_to_end = m.group(2)
+                    if data.startswith('Timeout') or data.startswith('TEST OK'):
+                        sim_progress = 100
+                        sim_to_end = 0
+        except Exception:
+            pass
+    return jsonify({
+        'running': bulk_status['running'],
+        'current': bulk_status['current'],
+        'total': bulk_status['total'],
+        'experiment_id': bulk_status['experiment_id'],
+        'error': bulk_status['error'],
+        'sim_progress': sim_progress,
+        'sim_to_end': sim_to_end,
+    })
 
 @app.route('/run/<id>')
 def detailRun(id):
