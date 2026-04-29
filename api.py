@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from Model import db, Experiment, Run, Metrics, DBName, memConnection, memEngine, engine
+from Model import db, Session, Experiment, Run, Metrics, DBName, memConnection, memEngine, engine
 
 auth = HTTPBasicAuth()
 
@@ -27,6 +27,12 @@ app = Flask(__name__, template_folder="templates")
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
 app.config['UPLOAD_EXTENSIONS'] = ['.sql']
 app.config['UPLOAD_PATH'] = 'uploads/'
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    if exception:
+        Session.rollback()
+    Session.remove()
 
 @app.route('/')
 def hello():
@@ -72,7 +78,14 @@ def getProgress():
                 progress = 100
             if data.startswith('TEST OK'):
                 isRun = False
-    log = len(open('COOJA.testlog').readlines())
+    
+    # Count lines in COOJA.testlog, handling if file doesn't exist
+    log = 0
+    testlog_path = 'COOJA.testlog'
+    if os.path.exists(testlog_path):
+        with open(testlog_path, 'r') as f:
+            log = len(f.readlines())
+    
     status = {'run': isRun, 'progress': progress, 'doneIn': toEnd, 'logFile': log}
     return jsonify(status)
 
@@ -89,7 +102,8 @@ def extractMetricFromRun(id):
 def showExperimentAdd():
     experiments = db.query(Experiment).all()
     qtd = len(experiments)
-    return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user())
+    csc_files = sorted(f for f in os.listdir('.') if f.endswith('.csc'))
+    return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user(), csc_files=csc_files)
 
 @app.route('/experiment/add/', methods=['POST'])
 @auth.login_required
@@ -101,7 +115,8 @@ def executeExperimentAdd():
     db.commit()
     experiments = db.query(Experiment).all()
     qtd = len(experiments)
-    return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user())
+    csc_files = sorted(f for f in os.listdir('.') if f.endswith('.csc'))
+    return render_template("expAdd.html", count=qtd, experiments=experiments, user=auth.current_user(), csc_files=csc_files)
 
 @app.route('/run/<id>')
 def detailRun(id):

@@ -29,7 +29,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from sqlalchemy import create_engine, MetaData, ForeignKey, Column, Integer, String, DateTime, Boolean, PickleType
 from sqlalchemy.ext.mutable import MutableDict, MutableList
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 
 from Runner import Runner
 
@@ -44,8 +44,8 @@ engine = fileEngine
 
 meta = MetaData()
 Base = declarative_base(metadata=meta)
-Session = sessionmaker(bind=engine)
-db = Session()
+Session = scoped_session(sessionmaker(bind=engine))
+db = Session  # Use the scoped_session proxy directly
 
 class Experiment(Base):
     '''
@@ -546,7 +546,7 @@ class Application(Base):
             i += 1
         colourMap = plt.cm.ScalarMappable(cmap=plt.cm.rainbow)
         colourMap.set_array(z)
-        plt.colorbar(colourMap).set_label('Number of Messages')
+        fig.colorbar(colourMap, ax=ax).set_label('Number of Messages')
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
         ax.set_title("Nodes Generated Messages")
@@ -1439,7 +1439,7 @@ class Latency(Base):
             i += 1
         colourMap = plt.cm.ScalarMappable(cmap=plt.cm.rainbow)
         colourMap.set_array(z)
-        plt.colorbar(colourMap).set_label('Latency (ms)')
+        fig.colorbar(colourMap, ax=ax).set_label('Latency (ms)')
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
         ax.set_title("Nodes latency (Mean)")

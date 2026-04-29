@@ -20,7 +20,13 @@
         <div class="container">
           <form method="POST" action="">
             Experiment Name: <input id="Experiment's Name" type="text" name="expName"><br>
-            Experiment File: <input id="Experiment's File" type="text" name="expFile"><br>
+            Experiment File:
+            <select id="expFile" name="expFile">
+              <option value="" disabled selected>-- Select a .csc file --</option>
+              {% for csc in csc_files %}
+              <option value="{{ csc }}">{{ csc }}</option>
+              {% endfor %}
+            </select><br>
             <input id="submit" type="submit" value="Add">
           </form>
         </div>
