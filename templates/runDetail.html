@@ -48,11 +48,14 @@
       <div class="jumbotron">
         <div class="container">
           <h1 class="display-4">Experiment {{run.experiment.name ~ " Run: " ~ run.id }}</h1>
-          {% if hasMetric %}
-          <form method="get" action="/experiment/run/{{run.id}}/metrics">
-            <button type="submit">Extract Metrics</button>
-          </form>
-          {% endif %}
+          <div class="mt-2">
+            <a href="/run/summary/{{run.id}}" class="btn btn-outline-secondary btn-sm">Ver Sumário</a>
+            {% if hasMetric %}
+            <form method="get" action="/experiment/run/{{run.id}}/metrics" class="d-inline ml-2">
+              <button type="submit" class="btn btn-primary btn-sm">Extract Metrics</button>
+            </form>
+            {% endif %}
+          </div>
         </div>
       </div>
       {% if not hasMetric %}
