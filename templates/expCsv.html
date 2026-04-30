@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Exportar CSV - {{ exp.name }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+    <style>
+      .metric-group { margin-bottom: 1rem; }
+      .group-header { font-weight: 600; margin-bottom: .4rem; }
+      .badge-default { background-color: #28a745; }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">My Experiments</a>
+      <span class="navbar-text text-white ml-3">Exportar CSV — {{ exp.name }}</span>
+    </nav>
+
+    <div class="container mt-4">
+
+      <div class="card mb-3">
+        <div class="card-header">Experimento</div>
+        <div class="card-body">
+          <p class="mb-1"><strong>ID:</strong> {{ exp.id }} &nbsp; <strong>Nome:</strong> {{ exp.name }}</p>
+          <p class="mb-1"><strong>Arquivo:</strong> {{ exp.experimentFile }}</p>
+          <p class="mb-0"><strong>Runs com métricas:</strong> {{ run_count }}</p>
+        </div>
+      </div>
+
+      {% if run_count == 0 %}
+      <div class="alert alert-warning">Nenhum run com métricas encontrado para este experimento.</div>
+      {% else %}
+
+      <div class="card mb-3">
+        <div class="card-header">Parâmetros identificados nos runs</div>
+        <div class="card-body">
+          <p><strong>TSCH_SCHEDULE_CONF_DEFAULT_LENGTH:</strong>
+            {% for v in sf_values %}<span class="badge badge-primary mr-1">{{ v }}</span>{% endfor %}
+          </p>
+          <p class="mb-0"><strong>APP_SEND_INTERVAL_SEC:</strong>
+            {% for v in si_values %}<span class="badge badge-success mr-1">{{ v }}</span>{% endfor %}
+          </p>
+        </div>
+      </div>
+
+      <form method="POST" action="">
+
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Métricas a incluir no CSV</span>
+            <span>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setAll(true)">Selecionar todas</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary ml-1" onclick="setAll(false)">Desmarcar todas</button>
+            </span>
+          </div>
+          <div class="card-body">
+
+            {% set groups = available_metrics | map(attribute='group') | unique | list %}
+            {% for group in groups %}
+            <div class="metric-group">
+              <div class="group-header">
+                {{ group }}
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 ml-2"
+                        onclick="setGroup('{{ group }}', true)">todas</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 ml-1"
+                        onclick="setGroup('{{ group }}', false)">nenhuma</button>
+              </div>
+              {% for m in available_metrics if m.group == group %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input metric-cb group-{{ group }}"
+                       type="checkbox" name="metrics" id="m_{{ m.key }}"
+                       value="{{ m.key }}"
+                       {% if m.default %}checked{% endif %}>
+                <label class="form-check-label" for="m_{{ m.key }}">
+                  {{ m.label }}
+                  {% if m.default %}<span class="badge badge-success ml-1" title="ativo por padrão">padrão</span>{% endif %}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">Gerar CSV</div>
+          <div class="card-body">
+            <p class="text-muted">Serão gerados dois arquivos consolidados (média e desvio padrão),
+               agrupados por SlotFrame Length e Send Interval. O download retorna um <code>.zip</code> com ambos.</p>
+            <div class="form-group" style="max-width: 360px">
+              <label for="filename">Nome do arquivo</label>
+              <input type="text" class="form-control" id="filename" name="filename"
+                     value="experiment_{{ exp.id }}.csv" placeholder="resultado.csv">
+              <small class="text-muted">Será gerado também <code>STD{nome}</code> com os desvios padrão.</small>
+            </div>
+            <button type="submit" class="btn btn-success">Baixar CSV</button>
+            <a href="/experiment/{{ exp.id }}" class="btn btn-secondary ml-2">Voltar</a>
+          </div>
+        </div>
+
+      </form>
+      {% endif %}
+    </div>
+
+    <script>
+      function setAll(state) {
+        document.querySelectorAll('.metric-cb').forEach(cb => cb.checked = state);
+      }
+      function setGroup(group, state) {
+        document.querySelectorAll('.group-' + group).forEach(cb => cb.checked = state);
+      }
+    </script>
+  </body>
+</html>

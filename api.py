@@ -2,12 +2,13 @@ import re
 import os
 import threading
 
-from flask import Flask, render_template, Response, jsonify, request, redirect
+import zipfile
+from flask import Flask, render_template, Response, jsonify, request, redirect, send_file
 from werkzeug.utils import secure_filename
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from Model import db, Session, Experiment, Run, Metrics, ProjectConfFile, DBName, memConnection, memEngine, engine, bulk_status
+from Model import db, Session, Experiment, Run, Metrics, ProjectConfFile, AVAILABLE_METRICS, DBName, memConnection, memEngine, engine, bulk_status
 
 auth = HTTPBasicAuth()
 
@@ -202,6 +203,44 @@ def getBulkProgress():
         'sim_progress': sim_progress,
         'sim_to_end': sim_to_end,
     })
+
+@app.route('/experiment/csv/<id>', methods=['GET'])
+@auth.login_required
+def showCsvExport(id):
+    exp = db.query(Experiment).filter_by(id=id).first()
+    runs_with_params = [r for r in exp.runs if r.parameters and r.metric]
+    sf_values = sorted({r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] for r in runs_with_params})
+    si_values = sorted({r.parameters['APP_SEND_INTERVAL_SEC'] for r in runs_with_params})
+    return render_template("expCsv.html", exp=exp, user=auth.current_user(),
+                           run_count=len(runs_with_params),
+                           sf_values=sf_values, si_values=si_values,
+                           available_metrics=AVAILABLE_METRICS)
+
+@app.route('/experiment/csv/<id>', methods=['POST'])
+@auth.login_required
+def generateCsv(id):
+    import io as _io
+    exp = db.query(Experiment).filter_by(id=id).first()
+    filename = request.form.get('filename', f'experiment_{id}.csv').strip()
+    if not filename.endswith('.csv'):
+        filename += '.csv'
+
+    selected = set(request.form.getlist('metrics'))
+    if not selected:
+        selected = None  # fallback to defaults
+
+    exp.toCsv(filename, selected)
+
+    zip_buffer = _io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for f in [filename, 'STD' + filename]:
+            if os.path.exists(f):
+                zf.write(f)
+    zip_buffer.seek(0)
+
+    return send_file(zip_buffer, mimetype='application/zip',
+                     as_attachment=True,
+                     download_name=filename.replace('.csv', '_export.zip'))
 
 @app.route('/run/<id>')
 def detailRun(id):

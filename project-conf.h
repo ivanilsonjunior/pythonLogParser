@@ -46,8 +46,8 @@
 #define IEEE802154_CONF_PANID 0x0DE1
 
 /* Application settings */
-#define APP_SEND_INTERVAL_SEC 1
-#define APP_WARM_UP_PERIOD_SEC 300
+#define APP_SEND_INTERVAL_SEC 3
+#define APP_WARM_UP_PERIOD_SEC 100
 #define RPL_CONF_OF_OCP RPL_OCP_OF0 /* tells to use OF0 for DAGs rooted at this node */
 #define RPL_CONF_SUPPORTED_OFS {&rpl_of0, &rpl_mrhof} /* tells to compile in support for both OF0 and MRHOF */
 /* TSCH SLOT FRAME*/

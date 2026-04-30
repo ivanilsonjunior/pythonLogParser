@@ -169,52 +169,38 @@ class Experiment(Base):
                     return "Error"
         bulk_status['running'] = False
 
-    def toCsv(self, filename):
-        '''
-        Its a personal demanding for my experiements. In my experiments I have run with SlotFrame length [5,7 and 11] and APP_SEDD_INTERVAL of [3600(No App data), 1, 2, 3, 4, 5]
-        '''
-        sfLen = ['19', '33']
-        sendInterval = ['2', '3', '4', '5', '1']
-        dataset = {}
-        dados = []
-        runs = len(self.runs)
-        for r in self.runs:
-            dataset[self.experimentFile] = {}
-            for sf in sfLen:
-                dataset[str(self.experimentFile)][sf] = {}
-                for s in sendInterval:
-                    dataset[str(self.experimentFile)][sf][s] = []
-        for r in self.runs:
-            for sf in sfLen:
-                if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
-                    print(self.name + ' - extracting data from run ', r.id, ' of ', runs, ' > SF Length ' + r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] + ' > Send Interval ' + r.parameters['APP_SEND_INTERVAL_SEC'], end='\r')
-                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
+    def toCsv(self, filename, selected=None):
+        runs_with_params = [r for r in self.runs if r.parameters and r.metric]
+        sfLen = sorted({r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] for r in runs_with_params})
+        sendInterval = sorted({r.parameters['APP_SEND_INTERVAL_SEC'] for r in runs_with_params})
+
+        dataset = {str(self.experimentFile): {sf: {s: [] for s in sendInterval} for sf in sfLen}}
+        total = len(runs_with_params)
+        for r in runs_with_params:
+            sf = r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']
+            si = r.parameters['APP_SEND_INTERVAL_SEC']
+            if sf in dataset[str(self.experimentFile)] and si in dataset[str(self.experimentFile)][sf]:
+                print(self.name + ' - run', r.id, 'of', total, '> SF', sf, '> Interval', si, end='\r')
+                dataset[str(self.experimentFile)][sf][si].append(r.metric.getSummary(selected))
             r.records = []
         print("\nDone generating CSV")
-        for e in dataset.keys():
-            for sfleng in dataset[e].keys():
-                for sentInt in dataset[e][sfleng].keys():
-                    df = pd.DataFrame(dataset[e][sfleng][sentInt])
-                    data = {}
-                    data['SlotFrame Length'] = sfleng
-                    data['Sent Interval'] = sentInt
-                    data.update(json.loads(df.mean().to_json()))
-                    dados.append(data)
-                    del data
-        df = pd.json_normalize(dados)
-        df.to_csv(filename)
-        dados = []
-        for e in dataset.keys():
-            for sfleng in dataset[e].keys():
-                for sentInt in dataset[e][sfleng].keys():
-                    df = pd.DataFrame(dataset[e][sfleng][sentInt])
-                    data = {}
-                    data['SlotFrame Length'] = sfleng
-                    data['Sent Interval'] = sentInt
-                    data.update(json.loads(df.std().to_json()))
-                    dados.append(data)
-        df = pd.json_normalize(dados)
-        df.to_csv("STD" + filename)
+
+        def build_rows(agg_fn):
+            rows = []
+            for e in dataset:
+                for sf in dataset[e]:
+                    for si in dataset[e][sf]:
+                        entries = dataset[e][sf][si]
+                        if not entries:
+                            continue
+                        df_tmp = pd.DataFrame(entries)
+                        row = {'SlotFrame Length': sf, 'Sent Interval': si}
+                        row.update(json.loads(getattr(df_tmp, agg_fn)().to_json()))
+                        rows.append(row)
+            return rows
+
+        pd.json_normalize(build_rows('mean')).to_csv(filename)
+        pd.json_normalize(build_rows('std')).to_csv('STD' + filename)
 
 
 class Run(Base):
@@ -434,6 +420,42 @@ class Node(Base):
     posZ = Column(Integer, nullable=False)
 
 
+AVAILABLE_METRICS = [
+    # Application
+    {'key': 'app-latency',          'label': 'Latência Média (ms)',            'group': 'Application', 'default': True},
+    {'key': 'app-latency-median',   'label': 'Latência Mediana (ms)',           'group': 'Application', 'default': True},
+    {'key': 'app-pdr',              'label': 'PDR Global (%)',                  'group': 'Application', 'default': True},
+    {'key': 'app-genPkg',           'label': 'Pacotes Gerados',                 'group': 'Application', 'default': True},
+    # RPL
+    {'key': 'rpl-attach-time',      'label': 'Attach Time Médio',              'group': 'RPL', 'default': True},
+    {'key': 'rpl-parentsw',         'label': 'Parent Switches',                'group': 'RPL', 'default': False},
+    {'key': 'rpl-avgHops',          'label': 'Média de Hops (fatia 600s)',      'group': 'RPL', 'default': False},
+    {'key': 'rpl-avgHopsSliced',    'label': 'Média de Hops (fatia padrão)',    'group': 'RPL', 'default': False},
+    {'key': 'rpl-msg-total',        'label': 'Mensagens de Controle (total)',   'group': 'RPL', 'default': False},
+    {'key': 'rpl-msg-multicast-DIO','label': 'DIO Multicast',                  'group': 'RPL', 'default': False},
+    {'key': 'rpl-msg-unicast-DIO',  'label': 'DIO Unicast',                    'group': 'RPL', 'default': False},
+    {'key': 'rpl-msg-DIS',          'label': 'DIS',                            'group': 'RPL', 'default': False},
+    {'key': 'rpl-msg-DAO',          'label': 'DAO',                            'group': 'RPL', 'default': False},
+    {'key': 'rpl-msg-DAO-ACK',      'label': 'DAO-ACK',                        'group': 'RPL', 'default': False},
+    # MAC / TSCH
+    {'key': 'mac-sync-time',             'label': 'Sync Time Médio',           'group': 'MAC', 'default': True},
+    {'key': 'mac-disconnections',        'label': 'Desconexões',               'group': 'MAC', 'default': False},
+    {'key': 'mac-formation',             'label': 'Tempo de Formação (ms)',     'group': 'MAC', 'default': False},
+    {'key': 'mac-retransmissions',       'label': 'Retransmissões',            'group': 'MAC', 'default': False},
+    {'key': 'mac-retransRate',           'label': 'Taxa de Retransmissão',     'group': 'MAC', 'default': False},
+    {'key': 'mac-queuenbr-length',       'label': 'Fila NBR — Comprimento',    'group': 'MAC', 'default': False},
+    {'key': 'mac-queuenbr-occupation',   'label': 'Fila NBR — Ocupação (%)',   'group': 'MAC', 'default': False},
+    {'key': 'mac-queuenbr-variance',     'label': 'Fila NBR — Variância',      'group': 'MAC', 'default': False},
+    {'key': 'mac-queueglobal-length',    'label': 'Fila Global — Comprimento', 'group': 'MAC', 'default': False},
+    {'key': 'mac-queueglobal-occupation','label': 'Fila Global — Ocupação (%)', 'group': 'MAC', 'default': False},
+    {'key': 'mac-queueglobal-variance',  'label': 'Fila Global — Variância',   'group': 'MAC', 'default': False},
+    # Link Stats
+    {'key': 'link-pdr',              'label': 'PDR Link-Level (%)',             'group': 'LinkStats', 'default': False},
+    # Energy
+    {'key': 'energy-RDC',            'label': 'Radio Duty Cycle (%)',           'group': 'Energy', 'default': False},
+    {'key': 'energy-ChannelOccupation','label': 'Channel Utilization (%)',      'group': 'Energy', 'default': False},
+]
+
 class Metrics(Base):
     '''
     This is the metrics container. TODO: Assemble
@@ -461,17 +483,68 @@ class Metrics(Base):
         self.rpl = RPL(self)
         self.energy = Energy(self)
 
-    def getSummary(self):
-        '''
-        Here you should return the metrics that you want
-        '''
+    def getSummary(self, selected=None):
+        if selected is None:
+            selected = {m['key'] for m in AVAILABLE_METRICS if m['default']}
         retorno = {}
-        retorno['app-latency'] = self.application.latency.latencyMean()
-        retorno['app-latency-median'] = self.application.latency.latencyMedian()
-        retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
-        retorno['app-genPkg'] = len(self.application.records)
-        retorno['rpl-attach-time'] = self.rpl.getAttachTimeMean()
-        retorno['mac-sync-time'] = self.mac.getSyncTimeMean()
+
+        def _try(key, fn):
+            if key in selected:
+                try:
+                    retorno[key] = fn()
+                except Exception:
+                    retorno[key] = None
+
+        _try('app-latency',        lambda: self.application.latency.latencyMean())
+        _try('app-latency-median', lambda: self.application.latency.latencyMedian())
+        _try('app-pdr',            lambda: self.application.pdr.getGlobalPDR())
+        _try('app-genPkg',         lambda: len(self.application.records))
+
+        _try('rpl-attach-time',    lambda: self.rpl.getAttachTimeMean())
+        _try('rpl-parentsw',       lambda: self.rpl.getParentSwitches())
+        _try('rpl-avgHops',        lambda: self.rpl.getAverangeHops(slice=600000000))
+        _try('rpl-avgHopsSliced',  lambda: self.rpl.getAverangeHops())
+        if any(k.startswith('rpl-msg-') for k in selected):
+            try:
+                msgs = self.rpl.getControlMessages()
+                for typ in ['total', 'multicast-DIO', 'unicast-DIO', 'DIS', 'DAO', 'DAO-ACK']:
+                    key = f'rpl-msg-{typ}'
+                    if key in selected:
+                        retorno[key] = msgs.get(typ, 0)
+            except Exception:
+                pass
+
+        _try('mac-sync-time',             lambda: self.mac.getSyncTimeMean())
+        _try('mac-disconnections',        lambda: self.mac.getDisconnections())
+        _try('mac-formation',             lambda: self.mac.formationTime())
+        if any(k.startswith('mac-retrans') for k in selected):
+            try:
+                rt = self.mac.getRetransmissions()
+                _try('mac-retransmissions', lambda: rt['retransmissions'])
+                _try('mac-retransRate',     lambda: rt['retransRate'])
+            except Exception:
+                pass
+        if any(k.startswith('mac-queuenbr') for k in selected):
+            try:
+                q = self.mac.getNBRQueueOccupation()
+                _try('mac-queuenbr-length',     lambda: q['length'])
+                _try('mac-queuenbr-occupation', lambda: q['occupation'])
+                _try('mac-queuenbr-variance',   lambda: q['variance'])
+            except Exception:
+                pass
+        if any(k.startswith('mac-queueglobal') for k in selected):
+            try:
+                q = self.mac.getGlobalQueueOccupation()
+                _try('mac-queueglobal-length',     lambda: q['length'])
+                _try('mac-queueglobal-occupation', lambda: q['occupation'])
+                _try('mac-queueglobal-variance',   lambda: q['variance'])
+            except Exception:
+                pass
+
+        _try('link-pdr',               lambda: self.linkstats.getPDR()['PDR'])
+        _try('energy-RDC',             lambda: self.energy.getRadioDutyCicle())
+        _try('energy-ChannelOccupation', lambda: self.energy.getChannelUtilization())
+
         return retorno
 
 
